@@ -88,6 +88,6 @@ The server will run at `http://localhost:8080` by default.
     - PATCH `/v1/posts/{id}` - Update a post.
     - DELETE `/v1/posts/{id}` - Delete a post.
 
-Comments
+- Comments
     - POST `/v1/posts/{postId}/comments` - Add a comment to a post.
     - GET `/v1/posts/{postId}/comments` - Get all comments for a post.

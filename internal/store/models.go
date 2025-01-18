@@ -18,6 +18,12 @@ type Comment struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+type Follow struct {
+	UserID    uuid.UUID `json:"user_id"`
+	FollowID  uuid.UUID `json:"follow_id"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 type Post struct {
 	ID        uuid.UUID `json:"id"`
 	Title     string    `json:"title"`

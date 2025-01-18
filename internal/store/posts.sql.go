@@ -7,6 +7,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"time"
 
@@ -56,7 +57,7 @@ func (q *Queries) DeletePostById(ctx context.Context, id uuid.UUID) error {
 }
 
 const getPostWithCommentsById = `-- name: GetPostWithCommentsById :one
-SELECT p.title, p.content, p.user_id, p.tags, p.created_at, p.updated_at, 
+SELECT p.title, p.content, p.user_id, author.username, p.tags, p.created_at, p.updated_at, 
     JSON_AGG(
         JSON_BUILD_OBJECT(
             'id', c.id,
@@ -67,16 +68,18 @@ SELECT p.title, p.content, p.user_id, p.tags, p.created_at, p.updated_at,
         )
     ) AS comments
 FROM posts p
+LEFT JOIN users author ON p.user_id = author.id
 LEFT JOIN comments c ON p.id = c.post_id
 LEFT JOIN users u ON c.user_id = u.id
 WHERE p.id = $1
-GROUP BY p.id
+GROUP BY p.id, author.username
 `
 
 type GetPostWithCommentsByIdRow struct {
 	Title     string          `json:"title"`
 	Content   string          `json:"content"`
 	UserID    uuid.UUID       `json:"user_id"`
+	Username  sql.NullString  `json:"username"`
 	Tags      []string        `json:"tags"`
 	CreatedAt time.Time       `json:"created_at"`
 	UpdatedAt time.Time       `json:"updated_at"`
@@ -90,6 +93,7 @@ func (q *Queries) GetPostWithCommentsById(ctx context.Context, id uuid.UUID) (Ge
 		&i.Title,
 		&i.Content,
 		&i.UserID,
+		&i.Username,
 		pq.Array(&i.Tags),
 		&i.CreatedAt,
 		&i.UpdatedAt,
