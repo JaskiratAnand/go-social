@@ -48,11 +48,15 @@ RETURNING id, updated_at;
 -- name: GetUserFeed :many
 SELECT p.id, p.title, p.content, p.tags, p.created_at, p.updated_at, 
     u.username,
-    COUNT(c.id) AS comments_count
+    COALESCE(COUNT(c.id), 0) AS comments_count
 FROM posts p
 LEFT JOIN users u ON p.user_id = u.id
 LEFT JOIN comments c ON p.id = c.post_id
 JOIN follows f ON p.user_id = f.follow_id OR p.user_id = $1
-WHERE f.user_id = $1 OR p.user_id = $1
+WHERE 
+    f.user_id = $1 AND
+    (p.title ILIKE '%' || $2::TEXT || '%' OR p.content ILIKE '%' || $2::TEXT || '%') AND 
+    (p.tags @> $3 OR $3 = '{}')
 GROUP BY p.id, u.username
-ORDER BY created_at DESC;
+ORDER BY p.created_at DESC
+LIMIT $4 OFFSET $5;

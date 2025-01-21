@@ -180,29 +180,47 @@ func (q *Queries) GetPostsByUserId(ctx context.Context, userID uuid.UUID) ([]Get
 const getUserFeed = `-- name: GetUserFeed :many
 SELECT p.id, p.title, p.content, p.tags, p.created_at, p.updated_at, 
     u.username,
-    COUNT(c.id) AS comments_count
+    COALESCE(COUNT(c.id), 0) AS comments_count
 FROM posts p
 LEFT JOIN users u ON p.user_id = u.id
 LEFT JOIN comments c ON p.id = c.post_id
 JOIN follows f ON p.user_id = f.follow_id OR p.user_id = $1
-WHERE f.user_id = $1 OR p.user_id = $1
+WHERE 
+    f.user_id = $1 AND
+    (p.title ILIKE '%' || $2::TEXT || '%' OR p.content ILIKE '%' || $2::TEXT || '%') AND 
+    (p.tags @> $3 OR $3 = '{}')
 GROUP BY p.id, u.username
-ORDER BY created_at DESC
+ORDER BY p.created_at DESC
+LIMIT $4 OFFSET $5
 `
 
-type GetUserFeedRow struct {
-	ID            uuid.UUID     `json:"id"`
-	Title         string        `json:"title"`
-	Content       string        `json:"content"`
-	Tags          []string      `json:"tags"`
-	CreatedAt     interface{}   `json:"created_at"`
-	UpdatedAt     interface{}   `json:"updated_at"`
-	Username      string        `json:"username"`
-	CommentsCount sql.NullInt64 `json:"comments_count"`
+type GetUserFeedParams struct {
+	UserID  uuid.UUID `json:"user_id"`
+	Column2 string    `json:"column_2"`
+	Tags    []string  `json:"tags"`
+	Limit   int64     `json:"limit"`
+	Offset  int64     `json:"offset"`
 }
 
-func (q *Queries) GetUserFeed(ctx context.Context, userID uuid.UUID) ([]GetUserFeedRow, error) {
-	rows, err := q.db.QueryContext(ctx, getUserFeed, userID)
+type GetUserFeedRow struct {
+	ID            uuid.UUID      `json:"id"`
+	Title         string         `json:"title"`
+	Content       string         `json:"content"`
+	Tags          []string       `json:"tags"`
+	CreatedAt     time.Time      `json:"created_at"`
+	UpdatedAt     time.Time      `json:"updated_at"`
+	Username      sql.NullString `json:"username"`
+	CommentsCount sql.NullInt64  `json:"comments_count"`
+}
+
+func (q *Queries) GetUserFeed(ctx context.Context, arg GetUserFeedParams) ([]GetUserFeedRow, error) {
+	rows, err := q.db.QueryContext(ctx, getUserFeed,
+		arg.UserID,
+		arg.Column2,
+		pq.Array(arg.Tags),
+		arg.Limit,
+		arg.Offset,
+	)
 	if err != nil {
 		return nil, err
 	}
