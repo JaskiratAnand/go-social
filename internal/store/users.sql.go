@@ -37,9 +37,9 @@ FROM users
 WHERE id = $1 LIMIT 1
 `
 
-func (q *Queries) GetUserByUserId(ctx context.Context, id uuid.UUID) (User, error) {
+func (q *Queries) GetUserByUserId(ctx context.Context, id uuid.UUID) (Users, error) {
 	row := q.db.QueryRowContext(ctx, getUserByUserId, id)
-	var i User
+	var i Users
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
@@ -56,9 +56,9 @@ FROM users
 WHERE  username = $1 LIMIT 1
 `
 
-func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User, error) {
+func (q *Queries) GetUserByUsername(ctx context.Context, username string) (Users, error) {
 	row := q.db.QueryRowContext(ctx, getUserByUsername, username)
-	var i User
+	var i Users
 	err := row.Scan(
 		&i.ID,
 		&i.Email,

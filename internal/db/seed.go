@@ -11,15 +11,17 @@ import (
 )
 
 var (
-	NumberOfUsers    = 100
-	NumberOfPosts    = 80
-	NumberOfComments = 150
+	NumberOfUsers    = 200
+	NumberOfPosts    = 250
+	NumberOfComments = 1500
+	NumberOfFollows  = 500
 )
 
 func Seed(store *store.Queries) error {
 
 	ctx := context.Background()
 
+	log.Println("generating users...")
 	users := generateUsers(NumberOfUsers)
 	userIDs := make([]uuid.UUID, NumberOfUsers)
 	for i, user := range users {
@@ -31,6 +33,7 @@ func Seed(store *store.Queries) error {
 		}
 	}
 
+	log.Println("generating posts...")
 	posts := generatePosts(NumberOfPosts, userIDs)
 	postIDs := make([]uuid.UUID, NumberOfPosts)
 	for i, post := range posts {
@@ -42,6 +45,7 @@ func Seed(store *store.Queries) error {
 		postIDs[i] = createPost.ID
 	}
 
+	log.Println("generating comments...")
 	comments := generateComments(NumberOfComments, userIDs, postIDs)
 	for _, comment := range comments {
 		_, err := store.CreateComment(ctx, *comment)
@@ -51,14 +55,33 @@ func Seed(store *store.Queries) error {
 		}
 	}
 
+	log.Println("generating follows...")
+	follows := generateFollows(NumberOfFollows, userIDs)
+	for _, follow := range follows {
+		err := store.FollowUser(ctx, *follow)
+		if err != nil {
+			log.Println("Error creating follows while seeding data")
+			return err
+		}
+	}
+
 	return nil
 }
 
 func generateUsers(num int) []*store.CreateUserParams {
-	users := make([]*store.CreateUserParams, num)
 
+	names := []string{
+		"Aarav", "Emma", "Liam", "Sophia", "Noah", "Olivia", "Ethan", "Ava", "Mason", "Isabella",
+		"Lucas", "Mia", "Elijah", "Amelia", "Logan", "Harper", "James", "Charlotte", "Aiden", "Ella",
+		"Jackson", "Lily", "Alexander", "Aria", "Benjamin", "Chloe", "Sebastian", "Zoey", "William", "Grace",
+		"Henry", "Hannah", "Gabriel", "Ellie", "Matthew", "Scarlett", "Daniel", "Victoria", "Michael", "Layla",
+		"Samuel", "Nora", "David", "Hazel", "Joseph", "Aurora", "Carter", "Riley", "Owen", "Violet",
+	}
+
+	users := make([]*store.CreateUserParams, num)
 	for i := 0; i < num; i++ {
-		username := fmt.Sprintf("user_%v", i+1)
+		name := names[rand.IntN(len(names))]
+		username := fmt.Sprintf("%s_%v", name, i+1)
 
 		users[i] = &store.CreateUserParams{
 			Username: username,
@@ -145,4 +168,29 @@ func generateComments(num int, userIDs, postIDs []uuid.UUID) []*store.CreateComm
 		}
 	}
 	return comments
+}
+
+func generateFollows(num int, userIDs []uuid.UUID) []*store.FollowUserParams {
+	existingPairs := make(map[string]struct{})
+	follows := make([]*store.FollowUserParams, 0, num)
+
+	for len(follows) < num {
+		userID := userIDs[rand.IntN(len(userIDs))]
+		followID := userIDs[rand.IntN(len(userIDs))]
+		if userID == followID {
+			continue
+		}
+
+		pairKey := fmt.Sprintf("%s:%s", userID, followID)
+		if _, exists := existingPairs[pairKey]; exists {
+			continue
+		}
+
+		existingPairs[pairKey] = struct{}{}
+		follows = append(follows, &store.FollowUserParams{
+			UserID:   userID,
+			FollowID: followID,
+		})
+	}
+	return follows
 }

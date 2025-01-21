@@ -80,7 +80,7 @@ func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := app.jsonResponse(w, http.StatusCreated, post); err != nil {
+	if err := app.jsonResponse(w, http.StatusOK, post); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
@@ -169,7 +169,7 @@ func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if err := app.jsonResponse(w, http.StatusCreated, updatedPost); err != nil {
+	if err := app.jsonResponse(w, http.StatusOK, updatedPost); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}

@@ -44,3 +44,15 @@ SET
     tags = COALESCE($3, tags)
 WHERE id = $4 AND updated_at = $5
 RETURNING id, updated_at;
+
+-- name: GetUserFeed :many
+SELECT p.id, p.title, p.content, p.tags, p.created_at, p.updated_at, 
+    u.username,
+    COUNT(c.id) AS comments_count
+FROM posts p
+LEFT JOIN users u ON p.user_id = u.id
+LEFT JOIN comments c ON p.id = c.post_id
+JOIN follows f ON p.user_id = f.follow_id OR p.user_id = $1
+WHERE f.user_id = $1 OR p.user_id = $1
+GROUP BY p.id, u.username
+ORDER BY created_at DESC;

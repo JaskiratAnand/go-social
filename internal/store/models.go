@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type Comment struct {
+type Comments struct {
 	ID        uuid.UUID `json:"id"`
 	PostID    uuid.UUID `json:"post_id"`
 	UserID    uuid.UUID `json:"user_id"`
@@ -18,13 +18,13 @@ type Comment struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-type Follow struct {
+type Follows struct {
 	UserID    uuid.UUID `json:"user_id"`
 	FollowID  uuid.UUID `json:"follow_id"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
-type Post struct {
+type Posts struct {
 	ID        uuid.UUID `json:"id"`
 	Title     string    `json:"title"`
 	Content   string    `json:"content"`
@@ -34,7 +34,7 @@ type Post struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-type User struct {
+type Users struct {
 	ID        uuid.UUID `json:"id"`
 	Email     string    `json:"email"`
 	Username  string    `json:"username"`
