@@ -7,7 +7,6 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"time"
 
@@ -68,7 +67,7 @@ SELECT p.title, p.content, p.user_id, author.username, p.tags, p.created_at, p.u
         )
     ) AS comments
 FROM posts p
-LEFT JOIN users author ON p.user_id = author.id
+JOIN users author ON p.user_id = author.id
 LEFT JOIN comments c ON p.id = c.post_id
 LEFT JOIN users u ON c.user_id = u.id
 WHERE p.id = $1
@@ -79,7 +78,7 @@ type GetPostWithCommentsByIdRow struct {
 	Title     string          `json:"title"`
 	Content   string          `json:"content"`
 	UserID    uuid.UUID       `json:"user_id"`
-	Username  sql.NullString  `json:"username"`
+	Username  string          `json:"username"`
 	Tags      []string        `json:"tags"`
 	CreatedAt time.Time       `json:"created_at"`
 	UpdatedAt time.Time       `json:"updated_at"`
@@ -180,9 +179,9 @@ func (q *Queries) GetPostsByUserId(ctx context.Context, userID uuid.UUID) ([]Get
 const getUserFeed = `-- name: GetUserFeed :many
 SELECT p.id, p.title, p.content, p.tags, p.created_at, p.updated_at, 
     u.username,
-    COALESCE(COUNT(c.id), 0) AS comments_count
+    COUNT(c.id) AS comments_count
 FROM posts p
-LEFT JOIN users u ON p.user_id = u.id
+JOIN users u ON p.user_id = u.id
 LEFT JOIN comments c ON p.id = c.post_id
 JOIN follows f ON p.user_id = f.follow_id OR p.user_id = $1
 WHERE 
@@ -203,14 +202,14 @@ type GetUserFeedParams struct {
 }
 
 type GetUserFeedRow struct {
-	ID            uuid.UUID      `json:"id"`
-	Title         string         `json:"title"`
-	Content       string         `json:"content"`
-	Tags          []string       `json:"tags"`
-	CreatedAt     time.Time      `json:"created_at"`
-	UpdatedAt     time.Time      `json:"updated_at"`
-	Username      sql.NullString `json:"username"`
-	CommentsCount sql.NullInt64  `json:"comments_count"`
+	ID            uuid.UUID `json:"id"`
+	Title         string    `json:"title"`
+	Content       string    `json:"content"`
+	Tags          []string  `json:"tags"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+	Username      string    `json:"username"`
+	CommentsCount int64     `json:"comments_count"`
 }
 
 func (q *Queries) GetUserFeed(ctx context.Context, arg GetUserFeedParams) ([]GetUserFeedRow, error) {

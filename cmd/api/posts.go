@@ -17,6 +17,22 @@ type CreatePostPayload struct {
 	Tags    []string `json:"tags"`
 }
 
+// CreatePost godoc
+//
+//	@Summary		Create a Post
+//	@Description	Creates new posts
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			userID	path		string		true	"User ID"
+//	@Param			title	body		string		true	"Title"
+//	@Param			content	body		string		true	"Content"
+//	@Param			tags	body		[]string	true	"Tags"
+//	@Success		201		{object}	store.CreatePostRow
+//	@Failure		400		{object}	error	"Bad Request"
+//	@Failure		500		{object}	error	"Server encountered a problem"
+//	@Security		ApiKeyAuth
+//	@Router			/posts [post]
 func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	// setup user verification
@@ -57,6 +73,20 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 	}
 }
 
+// GetPost godoc
+//
+//	@Summary		Fetch Post
+//	@Description	Fetch post by id
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			postID	path		string	true	"Post ID"
+//	@Success		200		{object}	store.Posts
+//	@Failure		400		{object}	error	"Bad Request"
+//	@Failure		404		{object}	error	"Record Not Found"
+//	@Failure		500		{object}	error	"Server encountered a problem"
+//	@Security		ApiKeyAuth
+//	@Router			/posts/{postID} [get]
 func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "postID")
 
@@ -86,6 +116,20 @@ func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// DeletePost godoc
+//
+//	@Summary		Delete Post
+//	@Description	Deletes post by id
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			postID	path	string	true	"Post ID"
+//	@Success		204
+//	@Failure		400	{object}	error	"Bad Request"
+//	@Failure		404	{object}	error	"Record Not Found"
+//	@Failure		500	{object}	error	"Server encountered a problem"
+//	@Security		ApiKeyAuth
+//	@Router			/posts/{postID} [delete]
 func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request) {
 
 	// setup user verification
@@ -120,6 +164,22 @@ type UpdatePostPayload struct {
 	Tags    []string `json:"tags" validate:"omitempty"`
 }
 
+// UpdatePost godoc
+//
+//	@Summary		Fetch Post
+//	@Description	Fetch post by id
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			postID	path		string		true	"Post ID"
+//	@Param			title	body		string		false	"Title"
+//	@Param			content	body		string		false	"Content"
+//	@Param			tags	body		[]string	false	"Tags"
+//	@Success		200		{object}	store.UpdatePostByIdRow
+//	@Failure		400		{object}	error	"Bad Request"
+//	@Failure		500		{object}	error	"Server encountered a problem"
+//	@Security		ApiKeyAuth
+//	@Router			/posts/{postID} [patch]
 func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request) {
 
 	// setup user verification
@@ -180,6 +240,21 @@ type createCommentPayload struct {
 	Content string    `json:"content" validate:"omitempty,max=1000"`
 }
 
+// CreateComment godoc
+//
+//	@Summary		Create Comment
+//	@Description	Create comment on posts
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			postID	path		string	true	"Post ID"
+//	@Param			userID	body		string	true	"User ID"
+//	@Param			comment	body		string	false	"Comment"
+//	@Success		200		{object}	store.CreateCommentRow
+//	@Failure		400		{object}	error	"Bad Request"
+//	@Failure		500		{object}	error	"Server encountered a problem"
+//	@Security		ApiKeyAuth
+//	@Router			/posts/{postID}/comments [post]
 func (app *application) createCommentHandler(w http.ResponseWriter, r *http.Request) {
 
 	// setup user verification

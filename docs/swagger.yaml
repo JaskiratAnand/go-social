@@ -1,0 +1,476 @@
+basePath: /v1
+definitions:
+  store.CreateCommentRow:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+    type: object
+  store.CreatePostRow:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  store.GetUserFeedRow:
+    properties:
+      comments_count:
+        type: integer
+      content:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      title:
+        type: string
+      updated_at:
+        type: string
+      username:
+        type: string
+    type: object
+  store.Posts:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      title:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  store.UpdatePostByIdRow:
+    properties:
+      id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  store.Users:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      password:
+        items:
+          type: integer
+        type: array
+      username:
+        type: string
+    type: object
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: API for GoSocial, a social networking application.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: GoSocial API
+paths:
+  /health:
+    get:
+      description: Check server health
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Server encountered a problem
+          schema: {}
+      summary: Health endpoint
+      tags:
+      - health
+  /posts:
+    post:
+      consumes:
+      - application/json
+      description: Creates new posts
+      parameters:
+      - description: User ID
+        in: path
+        name: userID
+        required: true
+        type: string
+      - description: Title
+        in: body
+        name: title
+        required: true
+        schema:
+          type: string
+      - description: Content
+        in: body
+        name: content
+        required: true
+        schema:
+          type: string
+      - description: Tags
+        in: body
+        name: tags
+        required: true
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/store.CreatePostRow'
+        "400":
+          description: Bad Request
+          schema: {}
+        "500":
+          description: Server encountered a problem
+          schema: {}
+      security:
+      - ApiKeyAuth: []
+      summary: Create a Post
+      tags:
+      - posts
+  /posts/{postID}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes post by id
+      parameters:
+      - description: Post ID
+        in: path
+        name: postID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema: {}
+        "404":
+          description: Record Not Found
+          schema: {}
+        "500":
+          description: Server encountered a problem
+          schema: {}
+      security:
+      - ApiKeyAuth: []
+      summary: Delete Post
+      tags:
+      - posts
+    get:
+      consumes:
+      - application/json
+      description: Fetch post by id
+      parameters:
+      - description: Post ID
+        in: path
+        name: postID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/store.Posts'
+        "400":
+          description: Bad Request
+          schema: {}
+        "404":
+          description: Record Not Found
+          schema: {}
+        "500":
+          description: Server encountered a problem
+          schema: {}
+      security:
+      - ApiKeyAuth: []
+      summary: Fetch Post
+      tags:
+      - posts
+    patch:
+      consumes:
+      - application/json
+      description: Fetch post by id
+      parameters:
+      - description: Post ID
+        in: path
+        name: postID
+        required: true
+        type: string
+      - description: Title
+        in: body
+        name: title
+        schema:
+          type: string
+      - description: Content
+        in: body
+        name: content
+        schema:
+          type: string
+      - description: Tags
+        in: body
+        name: tags
+        schema:
+          items:
+            type: string
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/store.UpdatePostByIdRow'
+        "400":
+          description: Bad Request
+          schema: {}
+        "500":
+          description: Server encountered a problem
+          schema: {}
+      security:
+      - ApiKeyAuth: []
+      summary: Fetch Post
+      tags:
+      - posts
+  /posts/{postID}/comments:
+    post:
+      consumes:
+      - application/json
+      description: Create comment on posts
+      parameters:
+      - description: Post ID
+        in: path
+        name: postID
+        required: true
+        type: string
+      - description: User ID
+        in: body
+        name: userID
+        required: true
+        schema:
+          type: string
+      - description: Comment
+        in: body
+        name: comment
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/store.CreateCommentRow'
+        "400":
+          description: Bad Request
+          schema: {}
+        "500":
+          description: Server encountered a problem
+          schema: {}
+      security:
+      - ApiKeyAuth: []
+      summary: Create Comment
+      tags:
+      - posts
+  /users/{userID}:
+    get:
+      consumes:
+      - application/json
+      description: Fetches user profile by id
+      parameters:
+      - description: User ID
+        in: path
+        name: userID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/store.Users'
+        "400":
+          description: Bad Request
+          schema: {}
+        "404":
+          description: Record Not Found
+          schema: {}
+        "500":
+          description: Server encountered a problem
+          schema: {}
+      security:
+      - ApiKeyAuth: []
+      summary: Fetches user profile
+      tags:
+      - users
+  /users/{userID}/follow:
+    put:
+      consumes:
+      - application/json
+      description: Sets Follow user
+      parameters:
+      - description: User ID
+        in: path
+        name: userID
+        required: true
+        type: string
+      - description: Follow ID
+        in: body
+        name: followID
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Server encountered a problem
+          schema: {}
+      security:
+      - ApiKeyAuth: []
+      summary: Follows a user
+      tags:
+      - users
+  /users/{userID}/unfollow:
+    put:
+      consumes:
+      - application/json
+      description: Sets Unfollow user
+      parameters:
+      - description: User ID
+        in: path
+        name: userID
+        required: true
+        type: string
+      - description: Follow ID
+        in: body
+        name: followID
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Server encountered a problem
+          schema: {}
+      security:
+      - ApiKeyAuth: []
+      summary: Unfollows a user
+      tags:
+      - users
+  /users/{username}:
+    get:
+      consumes:
+      - application/json
+      description: Fetches user profile by username
+      parameters:
+      - description: Username
+        in: path
+        name: username
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/store.Users'
+        "400":
+          description: Bad Request
+          schema: {}
+        "404":
+          description: Record Not Found
+          schema: {}
+        "500":
+          description: Server encountered a problem
+          schema: {}
+      security:
+      - ApiKeyAuth: []
+      summary: Fetches user profile
+      tags:
+      - users
+  /users/feed:
+    get:
+      consumes:
+      - application/json
+      description: Fetches user feed with following posts
+      parameters:
+      - description: User ID
+        in: path
+        name: userID
+        required: true
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/store.GetUserFeedRow'
+            type: array
+        "400":
+          description: Bad Request
+          schema: {}
+        "500":
+          description: Server encountered a problem
+          schema: {}
+      security:
+      - ApiKeyAuth: []
+      summary: Fetches user feed
+      tags:
+      - feed
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+  BasicAuth:
+    type: basic
+swagger: "2.0"

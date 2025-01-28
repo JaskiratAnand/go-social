@@ -27,7 +27,7 @@ SELECT p.title, p.content, p.user_id, author.username, p.tags, p.created_at, p.u
         )
     ) AS comments
 FROM posts p
-LEFT JOIN users author ON p.user_id = author.id
+JOIN users author ON p.user_id = author.id
 LEFT JOIN comments c ON p.id = c.post_id
 LEFT JOIN users u ON c.user_id = u.id
 WHERE p.id = $1
@@ -48,9 +48,9 @@ RETURNING id, updated_at;
 -- name: GetUserFeed :many
 SELECT p.id, p.title, p.content, p.tags, p.created_at, p.updated_at, 
     u.username,
-    COALESCE(COUNT(c.id), 0) AS comments_count
+    COUNT(c.id) AS comments_count
 FROM posts p
-LEFT JOIN users u ON p.user_id = u.id
+JOIN users u ON p.user_id = u.id
 LEFT JOIN comments c ON p.id = c.post_id
 JOIN follows f ON p.user_id = f.follow_id OR p.user_id = $1
 WHERE 

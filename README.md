@@ -34,47 +34,53 @@ This project is a social networking site built using Golang.
 ## Installation
 
 1. Clone the repository:
-```bash
+    ```bash
     git clone https://github.com/JaskiratAnand/go-social.git
     cd go-social
-```
+    ```
 
 2. Set up environment variables: Rename .env.example to .env:
-```bash
+    ```bash
     DB_ADDR="postgres://admin:adminpassword@localhost:5432/go-social?sslmode=disable"
-```
+    ```
 
 3. Install dependencies:
-```bash
+    ```bash
     go mod tidy
-```
+    ```
 
 4. Create a db container in docker
-```bash
+    ```bash
     docker compose up
-```
+    ```
 
 5. Run database migrations using goose
-```bash
+    ```bash
     cd cmd/sql/schema
 
     goose postgres postgres://admin:adminpassword@localhost:5432/go-social up
-```
+    ```
 
 6. Generate db types & Queries using sqlc (if needed)
-```bash
+    ```bash
     sqlc generate
-```
+    ```
 
-7. Seed data to DB
-```bash
+7. Generate Swagger Docs
+    ```bash
+    swag init -g ./api/main.go -d cmd,internal && 
+    swag fmt
+    ```
+
+8. Seed data to DB
+    ```bash
     go run .\cmd\seed\main.go
-```
+    ```
 
-7. Run the live server using air-verse/air
-```bash
+9. Run the live server using air-verse/air
+    ```bash
     air
-```
+    ```
 
 Access the application:
 The server will run at `http://localhost:8080` by default.

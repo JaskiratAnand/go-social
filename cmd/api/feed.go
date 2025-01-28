@@ -8,6 +8,21 @@ import (
 	"github.com/google/uuid"
 )
 
+// GetUserFeed godoc
+//
+//	@Summary		Fetches user feed
+//	@Description	Fetches user feed with following posts
+//	@Tags			feed
+//	@Accept			json
+//	@Produce		json
+//	@Param			userID	path		string	true	"User ID"
+//	@Param			limit	query		int		false	"Limit"
+//	@Param			offset	query		int		false	"Offset"
+//	@Success		200		{object}	[]store.GetUserFeedRow
+//	@Failure		400		{object}	error	"Bad Request"
+//	@Failure		500		{object}	error	"Server encountered a problem"
+//	@Security		ApiKeyAuth
+//	@Router			/users/feed [get]
 func (app *application) getUserFeedHandler(w http.ResponseWriter, r *http.Request) {
 	fq := store.PaginatedFeedQuery{
 		Limit:  20,
