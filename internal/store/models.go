@@ -5,6 +5,7 @@
 package store
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -34,10 +35,17 @@ type Posts struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+type UserInvitations struct {
+	Token   uuid.UUID `json:"token"`
+	UserID  uuid.UUID `json:"user_id"`
+	Expiary time.Time `json:"expiary"`
+}
+
 type Users struct {
-	ID        uuid.UUID `json:"id"`
-	Email     string    `json:"email"`
-	Username  string    `json:"username"`
-	Password  []byte    `json:"password"`
-	CreatedAt time.Time `json:"created_at"`
+	ID        uuid.UUID    `json:"id"`
+	Email     string       `json:"email"`
+	Username  string       `json:"username"`
+	Password  []byte       `json:"password"`
+	CreatedAt time.Time    `json:"created_at"`
+	Verified  sql.NullBool `json:"verified"`
 }

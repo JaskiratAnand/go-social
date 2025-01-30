@@ -48,6 +48,9 @@ func main() {
 			maxIdleTime:  env.GetString("DB_MAX_IDLE_TIME", "15m"),
 		},
 		env: env.GetString("ENV", "development"),
+		mail: mailConfig{
+			exp: (5 * time.Minute),
+		},
 	}
 
 	logger := zap.Must(zap.NewProduction()).Sugar()
