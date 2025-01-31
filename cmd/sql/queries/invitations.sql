@@ -9,3 +9,8 @@ SELECT *
 FROM user_invitations
 WHERE token = $1
 LIMIT 1;
+
+-- name: DeleteInvitationByUserId :exec
+DELETE
+FROM user_invitations
+WHERE user_id = $1;

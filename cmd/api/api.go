@@ -56,6 +56,12 @@ func (app *application) mount() http.Handler {
 		docsURL := fmt.Sprintf("%s/swagger/doc.json", app.config.addr)
 		r.Get("/swagger/*", httpSwagger.Handler(httpSwagger.URL(docsURL)))
 
+		// auth
+		r.Route("/auth", func(r chi.Router) {
+			r.Post("/user", app.registerUserHandler)
+			r.Put("/activate/{token}", app.activateUserHandler)
+		})
+
 		// posts
 		r.Route("/posts", func(r chi.Router) {
 			r.Post("/", app.createPostHandler)

@@ -2,10 +2,13 @@ package main
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"net/http"
 	"time"
 
 	"github.com/JaskiratAnand/go-social/internal/store"
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -23,10 +26,10 @@ type RegisterUserPayload struct {
 //	@Tags			auth
 //	@Accept			json
 //	@Produce		json
-//	@Param			payload	body RegisterUserPayload
-//	@Success		201		{object}	string	true "User Registered"
-//	@Failure		400		{object}	error	"Bad Request"
-//	@Failure		500		{object}	error	"Server encountered a problem"
+//	@Param			payload	body	RegisterUserPayload	true
+//	@Success		201
+//	@Failure		400	{object}	error	"Bad Request"
+//	@Failure		500	{object}	error	"Server encountered a problem"
 //	@Router			/auth/user [post]
 func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Request) {
 	var payload RegisterUserPayload
@@ -44,14 +47,16 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	defer cancel()
 
 	// existing user
-	user, err := app.store.GetUserByEmail(ctx, payload.Email)
-	if err != nil {
-		app.internalServerError(w, r, err)
-		return
-	}
-	if user.Email != "" {
-		// user already exists
-	}
+	// user, err := app.store.GetUserByEmail(ctx, payload.Email)
+	// if (err != nil) && !errors.Is(err, sql.ErrNoRows) {
+	// 	app.internalServerError(w, r, err)
+	// 	return
+	// }
+
+	// if user.Verified {
+	// 	err := errors.New("user already exists")
+	// 	app.badRequestResponse(w, r, err)
+	// }
 
 	// hash pwd
 	hash, err := bcrypt.GenerateFromPassword([]byte(payload.Password), bcrypt.DefaultCost)
@@ -85,6 +90,63 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	if err := app.jsonResponse(w, http.StatusCreated, nil); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
+// ActivateUser godoc
+//
+//	@Summary		Activate user
+//	@Description	Activate user
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			token	path	string	true	"Invite token"
+//	@Success		204
+//	@Failure		404	{object}	error	"Invalid token"
+//	@Failure		500	{object}	error	"Server encountered a problem"
+//	@Router			/auth/activate/{token} [post]
+func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Request) {
+	tokenParam := chi.URLParam(r, "token")
+
+	ctx, cancel := context.WithTimeout(r.Context(), QueryTimeoutDuration)
+	defer cancel()
+
+	token, err := uuid.Parse(tokenParam)
+	if err != nil {
+		app.customError(w, r, http.StatusBadRequest, "invalid token")
+		return
+	}
+
+	invite, err := app.store.GetInvitationByToken(ctx, token)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			app.recordNotFoundResponse(w, r, err)
+			return
+		}
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if time.Now().After(invite.Expiary) {
+		app.customError(w, r, http.StatusBadGateway, "invite token expired")
+		return
+	}
+
+	err = app.store.ActivateUser(ctx, invite.UserID)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	err = app.store.DeleteInvitationByUserId(ctx, invite.UserID)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.jsonResponse(w, http.StatusNoContent, "User Activated"); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}

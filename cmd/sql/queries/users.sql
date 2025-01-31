@@ -18,3 +18,8 @@ WHERE email = $1 LIMIT 1;
 SELECT * 
 FROM users 
 WHERE username = $1 LIMIT 1;
+
+-- name: ActivateUser :exec 
+UPDATE users
+SET verified = true
+WHERE id = $1;

@@ -49,7 +49,7 @@ func main() {
 		},
 		env: env.GetString("ENV", "development"),
 		mail: mailConfig{
-			exp: (5 * time.Minute),
+			exp: (24 * time.Hour),
 		},
 	}
 

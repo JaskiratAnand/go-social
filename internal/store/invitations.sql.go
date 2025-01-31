@@ -30,6 +30,17 @@ func (q *Queries) CreateInvitation(ctx context.Context, arg CreateInvitationPara
 	return err
 }
 
+const deleteInvitationByUserId = `-- name: DeleteInvitationByUserId :exec
+DELETE
+FROM user_invitations
+WHERE user_id = $1
+`
+
+func (q *Queries) DeleteInvitationByUserId(ctx context.Context, userID uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteInvitationByUserId, userID)
+	return err
+}
+
 const getInvitationByToken = `-- name: GetInvitationByToken :one
 SELECT token, user_id, expiary
 FROM user_invitations

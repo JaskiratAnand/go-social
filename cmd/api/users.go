@@ -33,8 +33,7 @@ func (app *application) getUserByIdHandler(w http.ResponseWriter, r *http.Reques
 
 	userID, err := uuid.Parse(idParam)
 	if err != nil {
-		err = errors.New("invalid post-id")
-		app.badRequestResponse(w, r, err)
+		app.customError(w, r, http.StatusBadRequest, "invalid post-id")
 		return
 	}
 

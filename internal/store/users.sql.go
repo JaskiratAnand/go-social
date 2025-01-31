@@ -11,6 +11,17 @@ import (
 	"github.com/google/uuid"
 )
 
+const activateUser = `-- name: ActivateUser :exec
+UPDATE users
+SET verified = true
+WHERE id = $1
+`
+
+func (q *Queries) ActivateUser(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, activateUser, id)
+	return err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT 
 INTO users (username, email, password) 
