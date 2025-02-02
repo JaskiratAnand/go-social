@@ -1,0 +1,21 @@
+{{define "subject"}}Finish GoSocial registration{{end}}
+{{define "body"}}
+<!doctype html>
+<html>
+<head>
+    <title>Finish GoSocial registration</title>
+    <meta name="viewport" content="width=device-width" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body>
+    <p>Hi {{.Username}},</p>
+    <p>Tahnks for signing up for GoSocial. We're excited to have you on board!</p>
+    <p>To complete your registration, please click the link below to confirm your email address:</p>
+    <p><a href="{{.ActivationURL}}">{{.ActivationURL}}</a></p>
+    <p>I you want to actiivate your account manually, you can copy and paste above link.</p>
+    <p>If you didn't request this, you can ignore this email.</p>
+
+    <p>Thanks,</p>
+    <p>GoSocial Team</p>
+</html>
+{{end}}

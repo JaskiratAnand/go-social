@@ -76,7 +76,7 @@ const docTemplate = `{
                 "summary": "Register user",
                 "parameters": [
                     {
-                        "description": "Payload",
+                        "description": "User Signup detailes",
                         "name": "payload",
                         "in": "body",
                         "required": true,
@@ -87,7 +87,10 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "Created"
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
                     },
                     "400": {
                         "description": "Bad Request",

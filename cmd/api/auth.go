@@ -4,9 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/JaskiratAnand/go-social/internal/mailer"
 	"github.com/JaskiratAnand/go-social/internal/store"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -26,10 +28,10 @@ type RegisterUserPayload struct {
 //	@Tags			auth
 //	@Accept			json
 //	@Produce		json
-//	@Param			payload	body	RegisterUserPayload	true
-//	@Success		201
-//	@Failure		400	{object}	error	"Bad Request"
-//	@Failure		500	{object}	error	"Server encountered a problem"
+//	@Param			payload	body		RegisterUserPayload	true	"User Signup detailes"
+//	@Success		201		string		userID
+//	@Failure		400		{object}	error	"Bad Request"
+//	@Failure		500		{object}	error	"Server encountered a problem"
 //	@Router			/auth/user [post]
 func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Request) {
 	var payload RegisterUserPayload
@@ -89,7 +91,34 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if err := app.jsonResponse(w, http.StatusCreated, nil); err != nil {
+	// send email
+	isProdEnv := app.config.env == "production"
+	activationURL := fmt.Sprintf("%s/confirm/%s", app.config.frontendURL, invitationParam.Token.String()) // redirect to /auth/activate/{token} from FE
+	vars := struct {
+		Username      string
+		ActivationURL string
+	}{
+		Username:      payload.Username,
+		ActivationURL: activationURL,
+	}
+
+	if err := app.mailer.Send(
+		mailer.UserWelcomeTemplate,
+		payload.Username,
+		payload.Email,
+		vars,
+		!isProdEnv,
+	); err != nil {
+		app.logger.Errorw("error sending activation email", "error", err)
+
+		// rollback on email fail
+		if err := app.store.DeleteUser(ctx, userID); err != nil {
+			app.logger.Errorw("error deleting user", "error", err)
+		}
+		return
+	}
+
+	if err := app.jsonResponse(w, http.StatusCreated, userID); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}

@@ -140,7 +140,7 @@ paths:
       - application/json
       description: Registers user
       parameters:
-      - description: Payload
+      - description: User Signup detailes
         in: body
         name: payload
         required: true
@@ -151,6 +151,8 @@ paths:
       responses:
         "201":
           description: Created
+          schema:
+            type: string
         "400":
           description: Bad Request
           schema: {}

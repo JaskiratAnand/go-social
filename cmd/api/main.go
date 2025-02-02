@@ -5,6 +5,7 @@ import (
 
 	"github.com/JaskiratAnand/go-social/internal/db"
 	"github.com/JaskiratAnand/go-social/internal/env"
+	"github.com/JaskiratAnand/go-social/internal/mailer"
 	"github.com/JaskiratAnand/go-social/internal/store"
 	"go.uber.org/zap"
 )
@@ -39,8 +40,9 @@ func If[T any](cond bool, vtrue, vfalse T) T {
 
 func main() {
 	cfg := config{
-		addr:   env.GetString("ADDR", ":8080"),
-		apiURL: env.GetString("EXTERNAL_URL", "localhost:8080"),
+		addr:        env.GetString("ADDR", ":8080"),
+		apiURL:      env.GetString("EXTERNAL_URL", "localhost:8080"),
+		frontendURL: env.GetString("FRONTEND_URL", "https://localhost:4000"),
 		db: dbConfig{
 			addr:         env.GetString("DB_ADDR", "postgres://admin:adminpassword@localhost:5432/go-social?sslmode=disable"),
 			maxOpenConns: env.GetInt("DB_MAX_OPEN_CONNS", 30),
@@ -49,7 +51,11 @@ func main() {
 		},
 		env: env.GetString("ENV", "development"),
 		mail: mailConfig{
-			exp: (24 * time.Hour),
+			exp:       (24 * time.Hour),
+			emailAddr: env.GetString("EMAIL_ADDR", ""),
+			sendGrid: sendGridConfig{
+				apiKey: env.GetString("SENDGRID_API_KEY", ""),
+			},
 		},
 	}
 
@@ -70,10 +76,13 @@ func main() {
 
 	store := store.New(db)
 
+	mailer := mailer.NewSendGrid(cfg.mail.sendGrid.apiKey, cfg.mail.emailAddr)
+
 	app := &application{
 		config: cfg,
 		store:  store,
 		logger: logger,
+		mailer: mailer,
 	}
 
 	mux := app.mount()

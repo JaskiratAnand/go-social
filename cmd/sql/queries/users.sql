@@ -23,3 +23,8 @@ WHERE username = $1 LIMIT 1;
 UPDATE users
 SET verified = true
 WHERE id = $1;
+
+-- name: DeleteUser :exec
+DELETE
+FROM users
+WHERE id = $1;
