@@ -66,10 +66,10 @@ func (m *SendGridMailer) Send(templateFile, username, email string, data any, is
 			// exponential backoff
 			time.Sleep(time.Second * time.Duration(i+1))
 			continue
+		} else {
+			log.Printf("email sent with status code %d", response.StatusCode)
+			return nil
 		}
-
-		log.Printf("email sent with status code %d", response.StatusCode)
-		return nil
 	}
 
 	return fmt.Errorf("failed to send email after %d attempts", maxRetries)

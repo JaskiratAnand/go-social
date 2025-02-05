@@ -17,7 +17,7 @@
     "basePath": "/v1",
     "paths": {
         "/auth/activate/{token}": {
-            "post": {
+            "put": {
                 "description": "Activate user",
                 "consumes": [
                     "application/json"
@@ -81,11 +81,19 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/main.ReturnUserID"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {}
+                    },
+                    "401": {
+                        "description": "Invalid Credentials",
+                        "schema": {}
+                    },
+                    "409": {
+                        "description": "User Already Verified",
                         "schema": {}
                     },
                     "500": {
@@ -696,6 +704,14 @@
                 "username": {
                     "type": "string",
                     "maxLength": 100
+                }
+            }
+        },
+        "main.ReturnUserID": {
+            "type": "object",
+            "properties": {
+                "userID": {
+                    "type": "string"
                 }
             }
         },

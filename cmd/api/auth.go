@@ -21,6 +21,10 @@ type RegisterUserPayload struct {
 	Password string `json:"password" validate:"required,min=5,max=72"`
 }
 
+type ReturnUserID struct {
+	UserID uuid.UUID `json:"userID"`
+}
+
 // RegisterUser godoc
 //
 //	@Summary		Register user
@@ -29,13 +33,15 @@ type RegisterUserPayload struct {
 //	@Accept			json
 //	@Produce		json
 //	@Param			payload	body		RegisterUserPayload	true	"User Signup detailes"
-//	@Success		201		string		userID
+//	@Success		201		{object}	ReturnUserID
 //	@Failure		400		{object}	error	"Bad Request"
+//	@Failure		401		{object}	error	"Invalid Credentials"
+//	@Failure		409		{object}	error	"User Already Verified"
 //	@Failure		500		{object}	error	"Server encountered a problem"
 //	@Router			/auth/user [post]
 func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Request) {
 	var payload RegisterUserPayload
-	if err := readJSON(w, r, payload); err != nil {
+	if err := readJSON(w, r, &payload); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
@@ -49,34 +55,49 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	defer cancel()
 
 	// existing user
-	// user, err := app.store.GetUserByEmail(ctx, payload.Email)
-	// if (err != nil) && !errors.Is(err, sql.ErrNoRows) {
-	// 	app.internalServerError(w, r, err)
-	// 	return
-	// }
-
-	// if user.Verified {
-	// 	err := errors.New("user already exists")
-	// 	app.badRequestResponse(w, r, err)
-	// }
-
-	// hash pwd
-	hash, err := bcrypt.GenerateFromPassword([]byte(payload.Password), bcrypt.DefaultCost)
+	existingUser := false
+	user, err := app.store.GetUserByEmail(ctx, payload.Email)
 	if err != nil {
-		app.internalServerError(w, r, err)
+		if !errors.Is(err, sql.ErrNoRows) {
+			app.internalServerError(w, r, err)
+			return
+		}
+	} else {
+		existingUser = true
+	}
+
+	// verify password
+	if err := bcrypt.CompareHashAndPassword(user.Password, []byte(payload.Password)); err != nil {
+		app.customError(w, r, http.StatusUnauthorized, "invalid credentials")
 		return
 	}
 
-	// creating new user
-	createUserParam := &store.CreateUserParams{
-		Username: payload.Username,
-		Email:    payload.Email,
-		Password: hash,
-	}
-	userID, err := app.store.CreateUser(ctx, *createUserParam)
-	if err != nil {
-		app.internalServerError(w, r, err)
+	if existingUser && user.Verified {
+		app.customError(w, r, http.StatusConflict, "user already verified")
 		return
+	}
+
+	var userID uuid.UUID
+	if !existingUser { // creating new user
+		// hash pwd
+		hash, err := bcrypt.GenerateFromPassword([]byte(payload.Password), bcrypt.DefaultCost)
+		if err != nil {
+			app.internalServerError(w, r, err)
+			return
+		}
+
+		createUserParam := &store.CreateUserParams{
+			Username: payload.Username,
+			Email:    payload.Email,
+			Password: hash,
+		}
+		userID, err = app.store.CreateUser(ctx, *createUserParam)
+		if err != nil {
+			app.internalServerError(w, r, err)
+			return
+		}
+	} else {
+		userID = user.ID
 	}
 
 	// creating verification token
@@ -118,7 +139,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if err := app.jsonResponse(w, http.StatusCreated, userID); err != nil {
+	if err := app.jsonResponse(w, http.StatusCreated, &ReturnUserID{UserID: userID}); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
@@ -135,7 +156,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 //	@Success		204
 //	@Failure		404	{object}	error	"Invalid token"
 //	@Failure		500	{object}	error	"Server encountered a problem"
-//	@Router			/auth/activate/{token} [post]
+//	@Router			/auth/activate/{token} [put]
 func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Request) {
 	tokenParam := chi.URLParam(r, "token")
 
@@ -175,7 +196,7 @@ func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if err := app.jsonResponse(w, http.StatusNoContent, "User Activated"); err != nil {
+	if err := app.jsonResponse(w, http.StatusNoContent, ""); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}

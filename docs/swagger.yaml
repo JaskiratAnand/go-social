@@ -17,6 +17,11 @@ definitions:
     - password
     - username
     type: object
+  main.ReturnUserID:
+    properties:
+      userID:
+        type: string
+    type: object
   store.CreateCommentRow:
     properties:
       created_at:
@@ -110,7 +115,7 @@ info:
   title: GoSocial API
 paths:
   /auth/activate/{token}:
-    post:
+    put:
       consumes:
       - application/json
       description: Activate user
@@ -152,9 +157,15 @@ paths:
         "201":
           description: Created
           schema:
-            type: string
+            $ref: '#/definitions/main.ReturnUserID'
         "400":
           description: Bad Request
+          schema: {}
+        "401":
+          description: Invalid Credentials
+          schema: {}
+        "409":
+          description: User Already Verified
           schema: {}
         "500":
           description: Server encountered a problem

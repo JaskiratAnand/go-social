@@ -2,6 +2,8 @@
 INSERT 
 INTO user_invitations (token, user_id, expiary)
 VALUES ($1, $2, $3)
+ON CONFLICT (user_id) 
+DO UPDATE SET token = $1, expiary = $3
 RETURNING token;
 
 -- name: GetInvitationByToken :one

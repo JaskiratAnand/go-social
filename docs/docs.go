@@ -25,7 +25,7 @@ const docTemplate = `{
     "basePath": "{{.BasePath}}",
     "paths": {
         "/auth/activate/{token}": {
-            "post": {
+            "put": {
                 "description": "Activate user",
                 "consumes": [
                     "application/json"
@@ -89,11 +89,19 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/main.ReturnUserID"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {}
+                    },
+                    "401": {
+                        "description": "Invalid Credentials",
+                        "schema": {}
+                    },
+                    "409": {
+                        "description": "User Already Verified",
                         "schema": {}
                     },
                     "500": {
@@ -704,6 +712,14 @@ const docTemplate = `{
                 "username": {
                     "type": "string",
                     "maxLength": 100
+                }
+            }
+        },
+        "main.ReturnUserID": {
+            "type": "object",
+            "properties": {
+                "userID": {
+                    "type": "string"
                 }
             }
         },
