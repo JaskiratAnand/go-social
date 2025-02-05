@@ -57,6 +57,10 @@ const docTemplate = `{
                     "500": {
                         "description": "Server encountered a problem",
                         "schema": {}
+                    },
+                    "502": {
+                        "description": "Invite token expired",
+                        "schema": {}
                     }
                 }
             }

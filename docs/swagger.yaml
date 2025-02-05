@@ -136,6 +136,9 @@ paths:
         "500":
           description: Server encountered a problem
           schema: {}
+        "502":
+          description: Invite token expired
+          schema: {}
       summary: Activate user
       tags:
       - auth

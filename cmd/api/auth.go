@@ -123,21 +123,23 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		ActivationURL: activationURL,
 	}
 
-	if err := app.mailer.Send(
+	statusCode, err := app.mailer.Send(
 		mailer.UserWelcomeTemplate,
 		payload.Username,
 		payload.Email,
 		vars,
 		!isProdEnv,
-	); err != nil {
+	)
+	if err != nil {
 		app.logger.Errorw("error sending activation email", "error", err)
-
 		// rollback on email fail
 		if err := app.store.DeleteUser(ctx, userID); err != nil {
 			app.logger.Errorw("error deleting user", "error", err)
 		}
 		return
 	}
+
+	app.logger.Infow("Email sent", "status code", statusCode)
 
 	if err := app.jsonResponse(w, http.StatusCreated, &ReturnUserID{UserID: userID}); err != nil {
 		app.internalServerError(w, r, err)
@@ -156,6 +158,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 //	@Success		204
 //	@Failure		404	{object}	error	"Invalid token"
 //	@Failure		500	{object}	error	"Server encountered a problem"
+//	@Failure		502	{object}	error	"Invite token expired"
 //	@Router			/auth/activate/{token} [put]
 func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Request) {
 	tokenParam := chi.URLParam(r, "token")
