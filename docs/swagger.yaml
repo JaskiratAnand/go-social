@@ -1,5 +1,18 @@
 basePath: /v1
 definitions:
+  main.CreateUserTokenPayload:
+    properties:
+      email:
+        maxLength: 255
+        type: string
+      password:
+        maxLength: 72
+        minLength: 3
+        type: string
+    required:
+    - email
+    - password
+    type: object
   main.RegisterUserPayload:
     properties:
       email:
@@ -21,6 +34,19 @@ definitions:
     properties:
       userID:
         type: string
+    type: object
+  main.UserResponseType:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      username:
+        type: string
+      verified:
+        type: boolean
     type: object
   store.CreateCommentRow:
     properties:
@@ -85,23 +111,6 @@ definitions:
       updated_at:
         type: string
     type: object
-  store.Users:
-    properties:
-      created_at:
-        type: string
-      email:
-        type: string
-      id:
-        type: string
-      password:
-        items:
-          type: integer
-        type: array
-      username:
-        type: string
-      verified:
-        type: boolean
-    type: object
 info:
   contact:
     email: support@swagger.io
@@ -140,6 +149,37 @@ paths:
           description: Invite token expired
           schema: {}
       summary: Activate user
+      tags:
+      - auth
+  /auth/token:
+    post:
+      consumes:
+      - application/json
+      description: Create a Token
+      parameters:
+      - description: User credentials
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/main.CreateUserTokenPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Token
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema: {}
+        "401":
+          description: Unauthorized
+          schema: {}
+        "500":
+          description: Server encountered a problem
+          schema: {}
+      summary: Create a Token
       tags:
       - auth
   /auth/user:
@@ -406,7 +446,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/store.Users'
+            $ref: '#/definitions/main.UserResponseType'
         "400":
           description: Bad Request
           schema: {}
@@ -498,7 +538,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/store.Users'
+            $ref: '#/definitions/main.UserResponseType'
         "400":
           description: Bad Request
           schema: {}

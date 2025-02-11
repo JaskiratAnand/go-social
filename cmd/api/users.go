@@ -5,11 +5,20 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/JaskiratAnand/go-social/internal/store"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
+
+type UserResponseType struct {
+	ID        uuid.UUID `json:"id"`
+	Email     string    `json:"email"`
+	Username  string    `json:"username"`
+	CreatedAt time.Time `json:"created_at"`
+	Verified  bool      `json:"verified"`
+}
 
 // GetUserById godoc
 //
@@ -19,7 +28,7 @@ import (
 //	@Accept			json
 //	@Produce		json
 //	@Param			userID	path		string	true	"User ID"
-//	@Success		200		{object}	store.Users
+//	@Success		200		{object}	UserResponseType
 //	@Failure		400		{object}	error	"Bad Request"
 //	@Failure		404		{object}	error	"Record Not Found"
 //	@Failure		500		{object}	error	"Server encountered a problem"
@@ -33,7 +42,7 @@ func (app *application) getUserByIdHandler(w http.ResponseWriter, r *http.Reques
 
 	userID, err := uuid.Parse(idParam)
 	if err != nil {
-		app.customError(w, r, http.StatusBadRequest, "invalid post-id")
+		app.customErrorResponse(w, r, http.StatusBadRequest, "invalid post-id")
 		return
 	}
 
@@ -47,7 +56,15 @@ func (app *application) getUserByIdHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if err := app.jsonResponse(w, http.StatusCreated, user); err != nil {
+	userResponse := &UserResponseType{
+		ID:        user.ID,
+		Email:     user.Email,
+		Username:  user.Username,
+		CreatedAt: user.CreatedAt,
+		Verified:  user.Verified,
+	}
+
+	if err := app.jsonResponse(w, http.StatusCreated, userResponse); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
@@ -61,7 +78,7 @@ func (app *application) getUserByIdHandler(w http.ResponseWriter, r *http.Reques
 //	@Accept			json
 //	@Produce		json
 //	@Param			username	path		string	true	"Username"
-//	@Success		200			{object}	store.Users
+//	@Success		200			{object}	UserResponseType
 //	@Failure		400			{object}	error	"Bad Request"
 //	@Failure		404			{object}	error	"Record Not Found"
 //	@Failure		500			{object}	error	"Server encountered a problem"
@@ -83,7 +100,15 @@ func (app *application) getUserByUsernameHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
-	if err := app.jsonResponse(w, http.StatusCreated, user); err != nil {
+	userResponse := &UserResponseType{
+		ID:        user.ID,
+		Email:     user.Email,
+		Username:  user.Username,
+		CreatedAt: user.CreatedAt,
+		Verified:  user.Verified,
+	}
+
+	if err := app.jsonResponse(w, http.StatusOK, userResponse); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}

@@ -6,7 +6,7 @@ import (
 )
 
 func (app *application) recordNotFoundResponse(w http.ResponseWriter, r *http.Request, err error) {
-	app.logger.Warnf("not found error", "method", r.Method, "path", r.URL.Path, "error", err.Error())
+	app.logger.Warnw("not found error", "method", r.Method, "path", r.URL.Path, "error", err.Error())
 
 	writeJSONError(w, http.StatusNotFound, "record not found")
 }
@@ -23,9 +23,23 @@ func (app *application) badRequestResponse(w http.ResponseWriter, r *http.Reques
 	writeJSONError(w, http.StatusBadRequest, err.Error())
 }
 
-func (app *application) customError(w http.ResponseWriter, r *http.Request, status int, errMessage string) {
+func (app *application) customErrorResponse(w http.ResponseWriter, r *http.Request, status int, errMessage string) {
 	err := errors.New(errMessage)
 	app.logger.Warnw("error", "method", r.Method, "path", r.URL.Path, "error", err.Error())
 
 	writeJSONError(w, status, err.Error())
+}
+
+func (app *application) unauthorizedErrorResponse(w http.ResponseWriter, r *http.Request, err error) {
+	app.logger.Warnw("unauthorized user", "method", r.Method, "path", r.URL.Path, "error", err.Error())
+
+	writeJSONError(w, http.StatusUnauthorized, "unauthorized")
+}
+
+func (app *application) unauthorizedBasicErrorResponse(w http.ResponseWriter, r *http.Request, err error) {
+	app.logger.Warnw("unauthorized user", "method", r.Method, "path", r.URL.Path, "error", err.Error())
+
+	w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
+
+	writeJSONError(w, http.StatusUnauthorized, "unauthorized")
 }

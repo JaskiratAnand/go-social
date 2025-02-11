@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/JaskiratAnand/go-social/internal/auth"
 	"github.com/JaskiratAnand/go-social/internal/mailer"
 	"github.com/JaskiratAnand/go-social/internal/store"
 	"github.com/go-chi/chi/v5"
@@ -17,10 +18,11 @@ import (
 )
 
 type application struct {
-	config config
-	store  *store.Queries
-	logger *zap.SugaredLogger
-	mailer mailer.Client
+	config        config
+	store         *store.Queries
+	logger        *zap.SugaredLogger
+	mailer        mailer.Client
+	authenticator auth.Authenticator
 }
 
 type config struct {
@@ -30,6 +32,7 @@ type config struct {
 	apiURL      string
 	mail        mailConfig
 	frontendURL string
+	auth        authConfig
 }
 
 type mailConfig struct {
@@ -40,6 +43,20 @@ type mailConfig struct {
 
 type sendGridConfig struct {
 	apiKey string
+}
+
+type authConfig struct {
+	basic basicConfig
+	token tokenConfig
+}
+type basicConfig struct {
+	user string
+	pass string
+}
+type tokenConfig struct {
+	secret string
+	exp    time.Duration
+	iss    string
 }
 
 type dbConfig struct {
@@ -68,8 +85,10 @@ func (app *application) mount() http.Handler {
 
 	r.Use(middleware.Timeout(60 * time.Second))
 
+	r.Use(app.ContextMiddlware())
+
 	r.Route("/v1", func(r chi.Router) {
-		r.Get("/health", app.healthCheckHandler)
+		r.With(app.BasicAuthMiddleware()).Get("/health", app.healthCheckHandler)
 
 		// swagger route
 		docsURL := fmt.Sprintf("%s/swagger/doc.json", app.config.addr)
@@ -79,10 +98,14 @@ func (app *application) mount() http.Handler {
 		r.Route("/auth", func(r chi.Router) {
 			r.Post("/user", app.registerUserHandler)
 			r.Put("/activate/{token}", app.activateUserHandler)
+
+			r.Post("/token", app.createTokenHandler)
 		})
 
 		// posts
 		r.Route("/posts", func(r chi.Router) {
+			r.Use(app.AuthTokenMiddleware())
+
 			r.Post("/", app.createPostHandler)
 
 			r.Route("/{postID}", func(r chi.Router) {
@@ -98,6 +121,7 @@ func (app *application) mount() http.Handler {
 
 		// users
 		r.Route("/users", func(r chi.Router) {
+			r.Use(app.AuthTokenMiddleware())
 
 			r.Route("/{userID}", func(r chi.Router) {
 				r.Get("/", app.getUserByIdHandler)
@@ -132,7 +156,7 @@ func (app *application) run(mux http.Handler) error {
 		IdleTimeout:  time.Minute,
 	}
 
-	app.logger.Infow("Server started at", "addr", app.config.addr, "env", app.config.env)
+	app.logger.Infow("Server started", "addr", app.config.addr, "env", app.config.env)
 
 	return srv.ListenAndServe()
 }

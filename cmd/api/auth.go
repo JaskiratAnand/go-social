@@ -11,6 +11,7 @@ import (
 	"github.com/JaskiratAnand/go-social/internal/mailer"
 	"github.com/JaskiratAnand/go-social/internal/store"
 	"github.com/go-chi/chi/v5"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -45,7 +46,6 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		app.badRequestResponse(w, r, err)
 		return
 	}
-
 	if err := Validate.Struct(payload); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
@@ -68,12 +68,12 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 
 	// verify password
 	if err := bcrypt.CompareHashAndPassword(user.Password, []byte(payload.Password)); err != nil {
-		app.customError(w, r, http.StatusUnauthorized, "invalid credentials")
+		app.unauthorizedErrorResponse(w, r, err)
 		return
 	}
 
 	if existingUser && user.Verified {
-		app.customError(w, r, http.StatusConflict, "user already verified")
+		app.customErrorResponse(w, r, http.StatusConflict, "user already verified")
 		return
 	}
 
@@ -168,7 +168,7 @@ func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Reque
 
 	token, err := uuid.Parse(tokenParam)
 	if err != nil {
-		app.customError(w, r, http.StatusBadRequest, "invalid token")
+		app.customErrorResponse(w, r, http.StatusBadRequest, "invalid token")
 		return
 	}
 
@@ -183,7 +183,7 @@ func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	if time.Now().After(invite.Expiary) {
-		app.customError(w, r, http.StatusBadGateway, "invite token expired")
+		app.customErrorResponse(w, r, http.StatusBadGateway, "invite token expired")
 		return
 	}
 
@@ -200,6 +200,71 @@ func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	if err := app.jsonResponse(w, http.StatusNoContent, ""); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
+type CreateUserTokenPayload struct {
+	Email    string `json:"email" validate:"required,email,max=255"`
+	Password string `json:"password" validate:"required,min=3,max=72"`
+}
+
+// CreateToken godoc
+//
+//	@Summary		Create a Token
+//	@Description	Create a Token
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			payload	body		CreateUserTokenPayload	true	"User credentials"
+//	@Success		200		{string}	string					"Token"
+//	@Failure		400		{object}	error					"Bad Request"
+//	@Failure		401		{object}	error					"Unauthorized"
+//	@Failure		500		{object}	error					"Server encountered a problem"
+//	@Router			/auth/token [post]
+func (app *application) createTokenHandler(w http.ResponseWriter, r *http.Request) {
+	var payload CreateUserTokenPayload
+	if err := readJSON(w, r, &payload); err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+	if err := Validate.Struct(payload); err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), QueryTimeoutDuration)
+	defer cancel()
+
+	// check existing user
+	user, err := app.store.GetUserByEmail(ctx, payload.Email)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			app.unauthorizedErrorResponse(w, r, err)
+		} else {
+			app.internalServerError(w, r, err)
+		}
+		return
+	}
+
+	// gen token => add claims
+	claims := jwt.MapClaims{
+		"sub": user.ID,
+		"exp": time.Now().Add(app.config.auth.token.exp).Unix(),
+		"iat": time.Now().Unix(),
+		"nbf": time.Now().Unix(),
+		"iss": app.config.auth.token.iss,
+		"aud": app.config.auth.token.iss,
+	}
+	token, err := app.authenticator.GenerateToken(claims)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	// send to client
+	if err := app.jsonResponse(w, http.StatusOK, token); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
