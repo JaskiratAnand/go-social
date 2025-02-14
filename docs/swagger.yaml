@@ -1,5 +1,21 @@
 basePath: /v1
 definitions:
+  main.CreatePostPayload:
+    properties:
+      content:
+        maxLength: 1000
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      title:
+        maxLength: 100
+        type: string
+    required:
+    - content
+    - title
+    type: object
   main.CreateUserTokenPayload:
     properties:
       email:
@@ -12,6 +28,13 @@ definitions:
     required:
     - email
     - password
+    type: object
+  main.FollowUnfollowUserPayload:
+    properties:
+      followID:
+        type: string
+    required:
+    - followID
     type: object
   main.RegisterUserPayload:
     properties:
@@ -33,6 +56,19 @@ definitions:
   main.ReturnUserID:
     properties:
       userID:
+        type: string
+    type: object
+  main.UpdatePostPayload:
+    properties:
+      content:
+        maxLength: 1000
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      title:
+        maxLength: 100
         type: string
     type: object
   main.UserResponseType:
@@ -245,26 +281,12 @@ paths:
         name: userID
         required: true
         type: string
-      - description: Title
+      - description: Create Post Params
         in: body
-        name: title
+        name: CreatePost
         required: true
         schema:
-          type: string
-      - description: Content
-        in: body
-        name: content
-        required: true
-        schema:
-          type: string
-      - description: Tags
-        in: body
-        name: tags
-        required: true
-        schema:
-          items:
-            type: string
-          type: array
+          $ref: '#/definitions/main.CreatePostPayload'
       produces:
       - application/json
       responses:
@@ -354,23 +376,12 @@ paths:
         name: postID
         required: true
         type: string
-      - description: Title
+      - description: Update Post Params
         in: body
-        name: title
+        name: updatePost
+        required: true
         schema:
-          type: string
-      - description: Content
-        in: body
-        name: content
-        schema:
-          type: string
-      - description: Tags
-        in: body
-        name: tags
-        schema:
-          items:
-            type: string
-          type: array
+          $ref: '#/definitions/main.UpdatePostPayload'
       produces:
       - application/json
       responses:
@@ -400,15 +411,10 @@ paths:
         name: postID
         required: true
         type: string
-      - description: User ID
+      - description: Content
         in: body
-        name: userID
+        name: content
         required: true
-        schema:
-          type: string
-      - description: Comment
-        in: body
-        name: comment
         schema:
           type: string
       produces:
@@ -438,98 +444,6 @@ paths:
       - description: User ID
         in: path
         name: userID
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/main.UserResponseType'
-        "400":
-          description: Bad Request
-          schema: {}
-        "404":
-          description: Record Not Found
-          schema: {}
-        "500":
-          description: Server encountered a problem
-          schema: {}
-      security:
-      - ApiKeyAuth: []
-      summary: Fetches user profile
-      tags:
-      - users
-  /users/{userID}/follow:
-    put:
-      consumes:
-      - application/json
-      description: Sets Follow user
-      parameters:
-      - description: User ID
-        in: path
-        name: userID
-        required: true
-        type: string
-      - description: Follow ID
-        in: body
-        name: followID
-        required: true
-        schema:
-          type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-        "500":
-          description: Server encountered a problem
-          schema: {}
-      security:
-      - ApiKeyAuth: []
-      summary: Follows a user
-      tags:
-      - users
-  /users/{userID}/unfollow:
-    put:
-      consumes:
-      - application/json
-      description: Sets Unfollow user
-      parameters:
-      - description: User ID
-        in: path
-        name: userID
-        required: true
-        type: string
-      - description: Follow ID
-        in: body
-        name: followID
-        required: true
-        schema:
-          type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-        "500":
-          description: Server encountered a problem
-          schema: {}
-      security:
-      - ApiKeyAuth: []
-      summary: Unfollows a user
-      tags:
-      - users
-  /users/{username}:
-    get:
-      consumes:
-      - application/json
-      description: Fetches user profile by username
-      parameters:
-      - description: Username
-        in: path
-        name: username
         required: true
         type: string
       produces:
@@ -592,6 +506,56 @@ paths:
       summary: Fetches user feed
       tags:
       - feed
+  /users/follow:
+    put:
+      consumes:
+      - application/json
+      description: Sets Follow user
+      parameters:
+      - description: Follow User Payload
+        in: body
+        name: followUser
+        required: true
+        schema:
+          $ref: '#/definitions/main.FollowUnfollowUserPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Server encountered a problem
+          schema: {}
+      security:
+      - ApiKeyAuth: []
+      summary: Follows a user
+      tags:
+      - users
+  /users/unfollow:
+    put:
+      consumes:
+      - application/json
+      description: Sets Unfollow user
+      parameters:
+      - description: Unfollow User Payload
+        in: body
+        name: unfollowUser
+        required: true
+        schema:
+          $ref: '#/definitions/main.FollowUnfollowUserPayload'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "500":
+          description: Server encountered a problem
+          schema: {}
+      security:
+      - ApiKeyAuth: []
+      summary: Unfollows a user
+      tags:
+      - users
 securityDefinitions:
   ApiKeyAuth:
     in: header

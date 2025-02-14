@@ -215,33 +215,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Title",
-                        "name": "title",
+                        "description": "Create Post Params",
+                        "name": "CreatePost",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "description": "Content",
-                        "name": "content",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "description": "Tags",
-                        "name": "tags",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/main.CreatePostPayload"
                         }
                     }
                 ],
@@ -381,30 +360,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Title",
-                        "name": "title",
+                        "description": "Update Post Params",
+                        "name": "updatePost",
                         "in": "body",
+                        "required": true,
                         "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "description": "Content",
-                        "name": "content",
-                        "in": "body",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "description": "Tags",
-                        "name": "tags",
-                        "in": "body",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/main.UpdatePostPayload"
                         }
                     }
                 ],
@@ -453,18 +414,10 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "User ID",
-                        "name": "userID",
+                        "description": "Content",
+                        "name": "content",
                         "in": "body",
                         "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "description": "Comment",
-                        "name": "comment",
-                        "in": "body",
                         "schema": {
                             "type": "string"
                         }
@@ -548,6 +501,86 @@ const docTemplate = `{
                 }
             }
         },
+        "/users/follow": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Sets Follow user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Follows a user",
+                "parameters": [
+                    {
+                        "description": "Follow User Payload",
+                        "name": "followUser",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.FollowUnfollowUserPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "500": {
+                        "description": "Server encountered a problem",
+                        "schema": {}
+                    }
+                }
+            }
+        },
+        "/users/unfollow": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Sets Unfollow user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Unfollows a user",
+                "parameters": [
+                    {
+                        "description": "Unfollow User Payload",
+                        "name": "unfollowUser",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.FollowUnfollowUserPayload"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "500": {
+                        "description": "Server encountered a problem",
+                        "schema": {}
+                    }
+                }
+            }
+        },
         "/users/{userID}": {
             "get": {
                 "security": [
@@ -596,152 +629,32 @@ const docTemplate = `{
                     }
                 }
             }
-        },
-        "/users/{userID}/follow": {
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Sets Follow user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Follows a user",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User ID",
-                        "name": "userID",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Follow ID",
-                        "name": "followID",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    },
-                    "500": {
-                        "description": "Server encountered a problem",
-                        "schema": {}
-                    }
-                }
-            }
-        },
-        "/users/{userID}/unfollow": {
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Sets Unfollow user",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Unfollows a user",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User ID",
-                        "name": "userID",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Follow ID",
-                        "name": "followID",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    },
-                    "500": {
-                        "description": "Server encountered a problem",
-                        "schema": {}
-                    }
-                }
-            }
-        },
-        "/users/{username}": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Fetches user profile by username",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "summary": "Fetches user profile",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Username",
-                        "name": "username",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/main.UserResponseType"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {}
-                    },
-                    "404": {
-                        "description": "Record Not Found",
-                        "schema": {}
-                    },
-                    "500": {
-                        "description": "Server encountered a problem",
-                        "schema": {}
-                    }
-                }
-            }
         }
     },
     "definitions": {
+        "main.CreatePostPayload": {
+            "type": "object",
+            "required": [
+                "content",
+                "title"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 100
+                }
+            }
+        },
         "main.CreateUserTokenPayload": {
             "type": "object",
             "required": [
@@ -757,6 +670,17 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 72,
                     "minLength": 3
+                }
+            }
+        },
+        "main.FollowUnfollowUserPayload": {
+            "type": "object",
+            "required": [
+                "followID"
+            ],
+            "properties": {
+                "followID": {
+                    "type": "string"
                 }
             }
         },
@@ -788,6 +712,25 @@ const docTemplate = `{
             "properties": {
                 "userID": {
                     "type": "string"
+                }
+            }
+        },
+        "main.UpdatePostPayload": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 100
                 }
             }
         },

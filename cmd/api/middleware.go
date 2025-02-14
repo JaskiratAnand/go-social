@@ -7,9 +7,19 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/JaskiratAnand/go-social/internal/store"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
+
+type contextKey string
+
+const userCtx contextKey = "user"
+
+func (app *application) GetUserFromCtx(r *http.Request) store.Users {
+	user := r.Context().Value(userCtx).(store.Users)
+	return user
+}
 
 func (app *application) ContextMiddlware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -57,10 +67,6 @@ func (app *application) BasicAuthMiddleware() func(http.Handler) http.Handler {
 		})
 	}
 }
-
-type contextKey string
-
-const userCtx contextKey = "user"
 
 func (app *application) AuthTokenMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {

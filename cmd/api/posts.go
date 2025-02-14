@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"net/http"
@@ -24,19 +23,13 @@ type CreatePostPayload struct {
 //	@Tags			posts
 //	@Accept			json
 //	@Produce		json
-//	@Param			userID	path		string		true	"User ID"
-//	@Param			title	body		string		true	"Title"
-//	@Param			content	body		string		true	"Content"
-//	@Param			tags	body		[]string	true	"Tags"
-//	@Success		201		{object}	store.CreatePostRow
-//	@Failure		400		{object}	error	"Bad Request"
-//	@Failure		500		{object}	error	"Server encountered a problem"
+//	@Param			CreatePost	body		CreatePostPayload	true	"Create Post Payload"
+//	@Success		201			{object}	store.CreatePostRow
+//	@Failure		400			{object}	error	"Bad Request"
+//	@Failure		500			{object}	error	"Server encountered a problem"
 //	@Security		ApiKeyAuth
 //	@Router			/posts [post]
 func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request) {
-
-	// setup user verification
-
 	var payload CreatePostPayload
 	if err := readJSON(w, r, &payload); err != nil {
 		app.badRequestResponse(w, r, err)
@@ -48,17 +41,17 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// var userID uuid.UUID
-	userID, _ := uuid.Parse("bf6ade0f-9ab6-49c3-bb5c-57808599c432")
+	ctx := r.Context()
+
+	// get user id
+	user := app.GetUserFromCtx(r)
+
 	createPost := &store.CreatePostParams{
 		Title:   payload.Title,
 		Content: payload.Content,
-		UserID:  userID,
+		UserID:  user.ID,
 		Tags:    payload.Tags,
 	}
-
-	ctx, cancel := context.WithTimeout(r.Context(), QueryTimeoutDuration)
-	defer cancel()
 
 	var post store.CreatePostRow
 	var err error
@@ -81,7 +74,7 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 //	@Accept			json
 //	@Produce		json
 //	@Param			postID	path		string	true	"Post ID"
-//	@Success		200		{object}	store.Posts
+//	@Success		200		{object}	store.GetPostWithCommentsByIdRow
 //	@Failure		400		{object}	error	"Bad Request"
 //	@Failure		404		{object}	error	"Record Not Found"
 //	@Failure		500		{object}	error	"Server encountered a problem"
@@ -90,8 +83,7 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "postID")
 
-	ctx, cancel := context.WithTimeout(r.Context(), QueryTimeoutDuration)
-	defer cancel()
+	ctx := r.Context()
 
 	postID, err := uuid.Parse(idParam)
 	if err != nil {
@@ -131,13 +123,11 @@ func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 //	@Security		ApiKeyAuth
 //	@Router			/posts/{postID} [delete]
 func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request) {
-
-	// setup user verification
-
 	idParam := chi.URLParam(r, "postID")
 
-	ctx, cancel := context.WithTimeout(r.Context(), QueryTimeoutDuration)
-	defer cancel()
+	ctx := r.Context()
+
+	user := app.GetUserFromCtx(r)
 
 	postID, err := uuid.Parse(idParam)
 	if err != nil {
@@ -146,7 +136,12 @@ func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if err = app.store.DeletePostById(ctx, postID); err != nil {
+	deletePostParam := &store.DeletePostByIdParams{
+		ID:     postID,
+		UserID: user.ID,
+	}
+
+	if err = app.store.DeletePostById(ctx, *deletePostParam); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			app.recordNotFoundResponse(w, r, err)
 			return
@@ -154,7 +149,6 @@ func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request
 		app.internalServerError(w, r, err)
 		return
 	}
-
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -171,19 +165,15 @@ type UpdatePostPayload struct {
 //	@Tags			posts
 //	@Accept			json
 //	@Produce		json
-//	@Param			postID	path		string		true	"Post ID"
-//	@Param			title	body		string		false	"Title"
-//	@Param			content	body		string		false	"Content"
-//	@Param			tags	body		[]string	false	"Tags"
-//	@Success		200		{object}	store.UpdatePostByIdRow
-//	@Failure		400		{object}	error	"Bad Request"
-//	@Failure		500		{object}	error	"Server encountered a problem"
+//	@Param			postID		path		string				true	"Post ID"
+//	@Param			updatePost	body		UpdatePostPayload	true	"Update Post Payload"
+//	@Success		200			{object}	store.UpdatePostByIdRow
+//	@Failure		400			{object}	error	"Bad Request"
+//	@Failure		401			{object}	error	"Unauthorized"
+//	@Failure		500			{object}	error	"Server encountered a problem"
 //	@Security		ApiKeyAuth
 //	@Router			/posts/{postID} [patch]
 func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request) {
-
-	// setup user verification
-
 	var payload UpdatePostPayload
 	if err := readJSON(w, r, &payload); err != nil {
 		app.badRequestResponse(w, r, err)
@@ -204,13 +194,19 @@ func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), QueryTimeoutDuration)
-	defer cancel()
+	ctx := r.Context()
+
+	user := app.GetUserFromCtx(r)
 
 	var post store.GetPostsByIdRow
 	post, err = app.store.GetPostsById(ctx, postID)
 	if err != nil {
 		app.internalServerError(w, r, err)
+		return
+	}
+
+	if user.ID != post.UserID {
+		app.customErrorResponse(w, r, http.StatusUnauthorized, "unauthorized")
 		return
 	}
 
@@ -235,9 +231,8 @@ func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request
 	}
 }
 
-type createCommentPayload struct {
-	UserID  uuid.UUID `json:"user_id" validate:"required"`
-	Content string    `json:"content" validate:"omitempty,max=1000"`
+type CreateCommentPayload struct {
+	Content string `json:"content" validate:"omitempty,max=1000"`
 }
 
 // CreateComment godoc
@@ -248,18 +243,14 @@ type createCommentPayload struct {
 //	@Accept			json
 //	@Produce		json
 //	@Param			postID	path		string	true	"Post ID"
-//	@Param			userID	body		string	true	"User ID"
-//	@Param			comment	body		string	false	"Comment"
+//	@Param			content	body		string	true	"Content Payload"
 //	@Success		200		{object}	store.CreateCommentRow
 //	@Failure		400		{object}	error	"Bad Request"
 //	@Failure		500		{object}	error	"Server encountered a problem"
 //	@Security		ApiKeyAuth
 //	@Router			/posts/{postID}/comments [post]
 func (app *application) createCommentHandler(w http.ResponseWriter, r *http.Request) {
-
-	// setup user verification
-
-	var payload createCommentPayload
+	var payload CreateCommentPayload
 	if err := readJSON(w, r, &payload); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
@@ -278,12 +269,13 @@ func (app *application) createCommentHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), QueryTimeoutDuration)
-	defer cancel()
+	ctx := r.Context()
+
+	user := app.GetUserFromCtx(r)
 
 	createComment := &store.CreateCommentParams{
 		PostID:  postID,
-		UserID:  payload.UserID,
+		UserID:  user.ID,
 		Content: payload.Content,
 	}
 

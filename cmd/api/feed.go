@@ -1,11 +1,9 @@
 package main
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/JaskiratAnand/go-social/internal/store"
-	"github.com/google/uuid"
 )
 
 // GetUserFeed godoc
@@ -39,14 +37,13 @@ func (app *application) getUserFeedHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), QueryTimeoutDuration)
-	defer cancel()
+	ctx := r.Context()
 
 	// get user id
-	userID, _ := uuid.Parse("9415cb50-29b8-486c-beb7-8a149e75cde1")
+	user := app.GetUserFromCtx(r)
 
 	getUserFeedParams := &store.GetUserFeedParams{
-		UserID:  userID,
+		UserID:  user.ID,
 		Column2: fq.Search, // Search
 		Tags:    fq.Tags,
 		Limit:   int64(fq.Limit),

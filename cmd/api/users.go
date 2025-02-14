@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"net/http"
@@ -37,8 +36,7 @@ type UserResponseType struct {
 func (app *application) getUserByIdHandler(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "userID")
 
-	ctx, cancel := context.WithTimeout(r.Context(), QueryTimeoutDuration)
-	defer cancel()
+	ctx := r.Context()
 
 	userID, err := uuid.Parse(idParam)
 	if err != nil {
@@ -83,12 +81,11 @@ func (app *application) getUserByIdHandler(w http.ResponseWriter, r *http.Reques
 //	@Failure		404			{object}	error	"Record Not Found"
 //	@Failure		500			{object}	error	"Server encountered a problem"
 //	@Security		ApiKeyAuth
-//	@Router			/users/{username} [get]
+//	// @Router			/users/{username} [get]
 func (app *application) getUserByUsernameHandler(w http.ResponseWriter, r *http.Request) {
 	username := chi.URLParam(r, "username")
 
-	ctx, cancel := context.WithTimeout(r.Context(), QueryTimeoutDuration)
-	defer cancel()
+	ctx := r.Context()
 
 	user, err := app.store.GetUserByUsername(ctx, username)
 	if err != nil {
@@ -114,38 +111,37 @@ func (app *application) getUserByUsernameHandler(w http.ResponseWriter, r *http.
 	}
 }
 
+type FollowUnfollowUserPayload struct {
+	FollowID uuid.UUID `json:"followID" validate:"required"`
+}
+
 // FollowUser godoc
 //
-//	@Summary		Follows a user
-//	@Description	Sets Follow user
+//	@Summary		Follow user
+//	@Description	Follow user
 //	@Tags			users
 //	@Accept			json
 //	@Produce		json
-//	@Param			userID		path		string	true	"User ID"
-//	@Param			followID	body		string	true	"Follow ID"
-//	@Success		200			{object}	nil
-//	@Failure		500			{object}	error	"Server encountered a problem"
+//	@Param			userID	path		string	true	"Follow ID"
+//	@Success		200		{object}	nil
+//	@Failure		500		{object}	error	"Server encountered a problem"
 //	@Security		ApiKeyAuth
 //	@Router			/users/{userID}/follow [put]
 func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "userID")
 
-	ctx, cancel := context.WithTimeout(r.Context(), QueryTimeoutDuration)
-	defer cancel()
+	ctx := r.Context()
 
-	userID, err := uuid.Parse(idParam)
+	followID, err := uuid.Parse(idParam)
 	if err != nil {
-		err = errors.New("invalid post-id")
-		app.badRequestResponse(w, r, err)
+		app.customErrorResponse(w, r, http.StatusBadRequest, "invalid post-id")
 		return
 	}
 
-	// followid from payload
-	// var payload.followID
-	var followID = uuid.New()
+	user := app.GetUserFromCtx(r)
 
 	userFollowData := &store.FollowUserParams{
-		UserID:   userID,
+		UserID:   user.ID,
 		FollowID: followID,
 	}
 
@@ -163,37 +159,32 @@ func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request
 
 // UnfollowUser godoc
 //
-//	@Summary		Unfollows a user
-//	@Description	Sets Unfollow user
+//	@Summary		Unfollow user
+//	@Description	Unfollow user
 //	@Tags			users
 //	@Accept			json
 //	@Produce		json
-//	@Param			userID		path		string	true	"User ID"
-//	@Param			followID	body		string	true	"Follow ID"
-//	@Success		200			{object}	nil
-//	@Failure		500			{object}	error	"Server encountered a problem"
+//	@Param			userID	path		string	true	"Unfollow ID"
+//	@Success		200		{object}	nil
+//	@Failure		500		{object}	error	"Server encountered a problem"
 //	@Security		ApiKeyAuth
 //	@Router			/users/{userID}/unfollow [put]
 func (app *application) unfollowUserHandler(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "userID")
 
-	ctx, cancel := context.WithTimeout(r.Context(), QueryTimeoutDuration)
-	defer cancel()
+	ctx := r.Context()
 
-	userID, err := uuid.Parse(idParam)
+	unfollowID, err := uuid.Parse(idParam)
 	if err != nil {
-		err = errors.New("invalid post-id")
-		app.badRequestResponse(w, r, err)
+		app.customErrorResponse(w, r, http.StatusBadRequest, "invalid post-id")
 		return
 	}
 
-	// followid from payload
-	// var payload.followID
-	var followID = uuid.New()
+	user := app.GetUserFromCtx(r)
 
 	userUnfollowData := &store.UnfollowUserParams{
-		UserID:   userID,
-		FollowID: followID,
+		UserID:   user.ID,
+		FollowID: unfollowID,
 	}
 
 	err = app.store.UnfollowUser(ctx, *userUnfollowData)

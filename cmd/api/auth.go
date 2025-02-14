@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -51,8 +50,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), QueryTimeoutDuration)
-	defer cancel()
+	ctx := r.Context()
 
 	// existing user
 	existingUser := false
@@ -163,8 +161,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Request) {
 	tokenParam := chi.URLParam(r, "token")
 
-	ctx, cancel := context.WithTimeout(r.Context(), QueryTimeoutDuration)
-	defer cancel()
+	ctx := r.Context()
 
 	token, err := uuid.Parse(tokenParam)
 	if err != nil {
@@ -234,8 +231,7 @@ func (app *application) createTokenHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), QueryTimeoutDuration)
-	defer cancel()
+	ctx := r.Context()
 
 	// check existing user
 	user, err := app.store.GetUserByEmail(ctx, payload.Email)

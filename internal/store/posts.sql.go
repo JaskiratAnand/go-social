@@ -47,11 +47,16 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (CreateP
 }
 
 const deletePostById = `-- name: DeletePostById :exec
-DELETE FROM posts WHERE id = $1
+DELETE FROM posts WHERE id = $1 AND user_id = $2
 `
 
-func (q *Queries) DeletePostById(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, deletePostById, id)
+type DeletePostByIdParams struct {
+	ID     uuid.UUID `json:"id"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
+func (q *Queries) DeletePostById(ctx context.Context, arg DeletePostByIdParams) error {
+	_, err := q.db.ExecContext(ctx, deletePostById, arg.ID, arg.UserID)
 	return err
 }
 

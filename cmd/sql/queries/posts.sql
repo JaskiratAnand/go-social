@@ -34,7 +34,7 @@ WHERE p.id = $1
 GROUP BY p.id, author.username;
 
 -- name: DeletePostById :exec
-DELETE FROM posts WHERE id = $1;
+DELETE FROM posts WHERE id = $1 AND user_id = $2;
 
 -- name: UpdatePostById :one
 UPDATE posts
