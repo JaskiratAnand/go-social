@@ -11,7 +11,7 @@ WHERE user_id = $1
 ORDER BY created_at DESC;
 
 -- name: GetPostsById :one
-SELECT title, content, tags, user_id, created_at, updated_at
+SELECT id, title, content, tags, user_id, created_at, updated_at
 FROM posts 
 WHERE id = $1 LIMIT 1;
 
@@ -34,7 +34,7 @@ WHERE p.id = $1
 GROUP BY p.id, author.username;
 
 -- name: DeletePostById :exec
-DELETE FROM posts WHERE id = $1 AND user_id = $2;
+DELETE FROM posts WHERE id = $1;
 
 -- name: UpdatePostById :one
 UPDATE posts

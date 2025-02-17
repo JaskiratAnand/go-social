@@ -24,8 +24,8 @@ func (q *Queries) ActivateUser(ctx context.Context, id uuid.UUID) error {
 
 const createUser = `-- name: CreateUser :one
 INSERT 
-INTO users (username, email, password) 
-VALUES ($1, $2, $3)
+INTO users (username, email, password, role_id) 
+VALUES ($1, $2, $3, $4)
 RETURNING id
 `
 
@@ -33,10 +33,16 @@ type CreateUserParams struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	Password []byte `json:"password"`
+	RoleID   int32  `json:"role_id"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (uuid.UUID, error) {
-	row := q.db.QueryRowContext(ctx, createUser, arg.Username, arg.Email, arg.Password)
+	row := q.db.QueryRowContext(ctx, createUser,
+		arg.Username,
+		arg.Email,
+		arg.Password,
+		arg.RoleID,
+	)
 	var id uuid.UUID
 	err := row.Scan(&id)
 	return id, err
@@ -54,7 +60,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id uuid.UUID) error {
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, username, password, created_at, verified 
+SELECT id, email, username, password, created_at, verified, role_id 
 FROM users 
 WHERE email = $1 LIMIT 1
 `
@@ -69,12 +75,13 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (Users, erro
 		&i.Password,
 		&i.CreatedAt,
 		&i.Verified,
+		&i.RoleID,
 	)
 	return i, err
 }
 
 const getUserByUserId = `-- name: GetUserByUserId :one
-SELECT id, email, username, password, created_at, verified 
+SELECT id, email, username, password, created_at, verified, role_id 
 FROM users 
 WHERE id = $1 LIMIT 1
 `
@@ -89,12 +96,13 @@ func (q *Queries) GetUserByUserId(ctx context.Context, id uuid.UUID) (Users, err
 		&i.Password,
 		&i.CreatedAt,
 		&i.Verified,
+		&i.RoleID,
 	)
 	return i, err
 }
 
 const getUserByUsername = `-- name: GetUserByUsername :one
-SELECT id, email, username, password, created_at, verified 
+SELECT id, email, username, password, created_at, verified, role_id 
 FROM users 
 WHERE username = $1 LIMIT 1
 `
@@ -109,6 +117,7 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (Users
 		&i.Password,
 		&i.CreatedAt,
 		&i.Verified,
+		&i.RoleID,
 	)
 	return i, err
 }

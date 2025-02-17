@@ -88,6 +88,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 			Username: payload.Username,
 			Email:    payload.Email,
 			Password: hash,
+			RoleID:   1,
 		}
 		userID, err = app.store.CreateUser(ctx, *createUserParam)
 		if err != nil {
@@ -241,6 +242,16 @@ func (app *application) createTokenHandler(w http.ResponseWriter, r *http.Reques
 		} else {
 			app.internalServerError(w, r, err)
 		}
+		return
+	}
+
+	if !user.Verified {
+		app.unauthorizedErrorResponse(w, r, err)
+		return
+	}
+	// verify user password
+	if err := bcrypt.CompareHashAndPassword(user.Password, []byte(payload.Password)); err != nil {
+		app.unauthorizedErrorResponse(w, r, err)
 		return
 	}
 

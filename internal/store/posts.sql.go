@@ -47,16 +47,11 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (CreateP
 }
 
 const deletePostById = `-- name: DeletePostById :exec
-DELETE FROM posts WHERE id = $1 AND user_id = $2
+DELETE FROM posts WHERE id = $1
 `
 
-type DeletePostByIdParams struct {
-	ID     uuid.UUID `json:"id"`
-	UserID uuid.UUID `json:"user_id"`
-}
-
-func (q *Queries) DeletePostById(ctx context.Context, arg DeletePostByIdParams) error {
-	_, err := q.db.ExecContext(ctx, deletePostById, arg.ID, arg.UserID)
+func (q *Queries) DeletePostById(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deletePostById, id)
 	return err
 }
 
@@ -107,24 +102,16 @@ func (q *Queries) GetPostWithCommentsById(ctx context.Context, id uuid.UUID) (Ge
 }
 
 const getPostsById = `-- name: GetPostsById :one
-SELECT title, content, tags, user_id, created_at, updated_at
+SELECT id, title, content, tags, user_id, created_at, updated_at
 FROM posts 
 WHERE id = $1 LIMIT 1
 `
 
-type GetPostsByIdRow struct {
-	Title     string    `json:"title"`
-	Content   string    `json:"content"`
-	Tags      []string  `json:"tags"`
-	UserID    uuid.UUID `json:"user_id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-func (q *Queries) GetPostsById(ctx context.Context, id uuid.UUID) (GetPostsByIdRow, error) {
+func (q *Queries) GetPostsById(ctx context.Context, id uuid.UUID) (Posts, error) {
 	row := q.db.QueryRowContext(ctx, getPostsById, id)
-	var i GetPostsByIdRow
+	var i Posts
 	err := row.Scan(
+		&i.ID,
 		&i.Title,
 		&i.Content,
 		pq.Array(&i.Tags),

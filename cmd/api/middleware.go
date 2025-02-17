@@ -3,11 +3,13 @@ package main
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/JaskiratAnand/go-social/internal/store"
+	"github.com/go-chi/chi/v5"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
@@ -15,10 +17,16 @@ import (
 type contextKey string
 
 const userCtx contextKey = "user"
+const postCtx contextKey = "post"
 
 func (app *application) GetUserFromCtx(r *http.Request) store.Users {
 	user := r.Context().Value(userCtx).(store.Users)
 	return user
+}
+
+func (app *application) GetPostFromCtx(r *http.Request) store.Posts {
+	post := r.Context().Value(postCtx).(store.Posts)
+	return post
 }
 
 func (app *application) ContextMiddlware() func(http.Handler) http.Handler {
@@ -111,4 +119,53 @@ func (app *application) AuthTokenMiddleware() func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+func (app *application) checkPostOwnership(requiredRole string, next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		user := app.GetUserFromCtx(r)
+
+		idParam := chi.URLParam(r, "postID")
+		postID, err := uuid.Parse(idParam)
+		if err != nil {
+			err = errors.New("invalid post-id")
+			app.badRequestResponse(w, r, err)
+			return
+		}
+
+		post, err := app.store.GetPostsById(ctx, postID)
+		if err != nil {
+			app.internalServerError(w, r, err)
+			return
+		}
+
+		ctx = context.WithValue(ctx, postCtx, post)
+
+		if post.UserID == user.ID {
+			next.ServeHTTP(w, r.WithContext(ctx))
+			return
+		}
+
+		allowed, err := app.checkRolePrecedence(r.Context(), &user, requiredRole)
+		if err != nil {
+			app.internalServerError(w, r, err)
+			return
+		}
+
+		if !allowed {
+			app.forbiddenResponse(w, r)
+			return
+		}
+
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func (app *application) checkRolePrecedence(ctx context.Context, user *store.Users, roleName string) (bool, error) {
+	role, err := app.store.GetRoleByName(ctx, roleName)
+	if err != nil {
+		return false, err
+	}
+	return user.RoleID >= role.ID, nil
 }

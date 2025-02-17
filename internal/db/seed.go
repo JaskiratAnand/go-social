@@ -87,6 +87,7 @@ func generateUsers(num int) []*store.CreateUserParams {
 			Username: username,
 			Email:    fmt.Sprintf("%v@example.com", username),
 			Password: []byte(""),
+			RoleID:   1,
 		}
 	}
 	return users

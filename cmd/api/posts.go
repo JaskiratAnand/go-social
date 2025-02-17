@@ -123,25 +123,10 @@ func (app *application) getPostHandler(w http.ResponseWriter, r *http.Request) {
 //	@Security		ApiKeyAuth
 //	@Router			/posts/{postID} [delete]
 func (app *application) deletePostHandler(w http.ResponseWriter, r *http.Request) {
-	idParam := chi.URLParam(r, "postID")
-
 	ctx := r.Context()
+	post := app.GetPostFromCtx(r)
 
-	user := app.GetUserFromCtx(r)
-
-	postID, err := uuid.Parse(idParam)
-	if err != nil {
-		err = errors.New("invalid post-id")
-		app.badRequestResponse(w, r, err)
-		return
-	}
-
-	deletePostParam := &store.DeletePostByIdParams{
-		ID:     postID,
-		UserID: user.ID,
-	}
-
-	if err = app.store.DeletePostById(ctx, *deletePostParam); err != nil {
+	if err := app.store.DeletePostById(ctx, post.ID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			app.recordNotFoundResponse(w, r, err)
 			return
@@ -185,41 +170,19 @@ func (app *application) updatePostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	idParam := chi.URLParam(r, "postID")
-
-	postID, err := uuid.Parse(idParam)
-	if err != nil {
-		err = errors.New("invalid post-id")
-		app.badRequestResponse(w, r, err)
-		return
-	}
-
 	ctx := r.Context()
 
-	user := app.GetUserFromCtx(r)
-
-	var post store.GetPostsByIdRow
-	post, err = app.store.GetPostsById(ctx, postID)
-	if err != nil {
-		app.internalServerError(w, r, err)
-		return
-	}
-
-	if user.ID != post.UserID {
-		app.customErrorResponse(w, r, http.StatusUnauthorized, "unauthorized")
-		return
-	}
+	post := app.GetPostFromCtx(r)
 
 	updatePost := &store.UpdatePostByIdParams{
 		Title:     If(payload.Title != "", payload.Title, post.Title),
 		Content:   If(payload.Content != "", payload.Content, post.Content),
 		Tags:      If(payload.Tags != nil, payload.Tags, post.Tags),
-		ID:        postID,
+		ID:        post.ID,
 		UpdatedAt: post.UpdatedAt,
 	}
 
-	var updatedPost store.UpdatePostByIdRow
-	updatedPost, err = app.store.UpdatePostById(ctx, *updatePost)
+	updatedPost, err := app.store.UpdatePostById(ctx, *updatePost)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return

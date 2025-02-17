@@ -34,6 +34,12 @@ type Posts struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+type Roles struct {
+	ID          int32  `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
 type UserInvitations struct {
 	Token   uuid.UUID `json:"token"`
 	UserID  uuid.UUID `json:"user_id"`
@@ -47,4 +53,5 @@ type Users struct {
 	Password  []byte    `json:"password"`
 	CreatedAt time.Time `json:"created_at"`
 	Verified  bool      `json:"verified"`
+	RoleID    int32     `json:"role_id"`
 }
