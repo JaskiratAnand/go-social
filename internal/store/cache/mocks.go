@@ -5,6 +5,7 @@ import (
 
 	"github.com/JaskiratAnand/go-social/internal/store"
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/mock"
 )
 
 func NewMockCache() Storage {
@@ -13,14 +14,18 @@ func NewMockCache() Storage {
 	}
 }
 
-type MockUserCache struct{}
-
-func (m MockUserCache) Get(ctx context.Context, id uuid.UUID) (*store.Users, error) {
-	return nil, nil
+type MockUserCache struct {
+	mock.Mock
 }
 
-func (m MockUserCache) Set(ctx context.Context, user *store.Users) error {
-	return nil
+func (m *MockUserCache) Get(ctx context.Context, userID uuid.UUID) (*store.Users, error) {
+	args := m.Called(userID)
+	return nil, args.Error(1)
 }
 
-func (m MockUserCache) Delete(ctx context.Context, id uuid.UUID) {}
+func (m *MockUserCache) Set(ctx context.Context, user *store.Users) error {
+	args := m.Called(user)
+	return args.Error(0)
+}
+
+func (m *MockUserCache) Delete(ctx context.Context, userID uuid.UUID) {}

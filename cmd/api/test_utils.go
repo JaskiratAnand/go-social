@@ -11,13 +11,17 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestMockApplication(t *testing.T) *application {
+func TestMockApplication(t *testing.T, withRedis config) *application {
 	t.Helper()
 
 	logger := zap.NewNop().Sugar()
 	mockStore := store.NewMockStore()
-	mockCache := cache.NewMockCache()
 	testAuth := &auth.TestAuthenticator{}
+
+	var mockCache cache.Storage
+	if withRedis.redisCfg.enabled {
+		mockCache = cache.NewMockCache()
+	}
 
 	return &application{
 		logger:        logger,
