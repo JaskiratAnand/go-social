@@ -65,14 +65,16 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	// verify password
-	if err := bcrypt.CompareHashAndPassword(user.Password, []byte(payload.Password)); err != nil {
-		app.unauthorizedErrorResponse(w, r, err)
-		return
-	}
+	if existingUser {
+		if err := bcrypt.CompareHashAndPassword(user.Password, []byte(payload.Password)); err != nil {
+			app.unauthorizedErrorResponse(w, r, err)
+			return
+		}
 
-	if existingUser && user.Verified {
-		app.customErrorResponse(w, r, http.StatusConflict, "user already verified")
-		return
+		if user.Verified {
+			app.customErrorResponse(w, r, http.StatusConflict, "user already verified")
+			return
+		}
 	}
 
 	var userID uuid.UUID

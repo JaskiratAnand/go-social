@@ -44,7 +44,7 @@ func (app *application) getUserByIdHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	user, err := app.store.GetUserByUserId(ctx, userID)
+	user, err := app.getUser(ctx, userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			app.recordNotFoundResponse(w, r, err)

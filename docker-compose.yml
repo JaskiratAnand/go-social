@@ -12,8 +12,28 @@ services:
       - db-data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+   
+  redis: 
+    image: redis:7.4-alpine
+    container_name: go-social-redis
+    command: redis-server --loglevel warning
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
 
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: go-social-redis-commander
+    environment:
+      REDIS_HOSTS: redis
+    ports:
+      - "127.0.0.1:8081:8081"
+    depends_on:
+      - redis
+    
 volumes:
   db-data:
+  redis-data:
 
 # psql -h localhost -U admin -d go-social
