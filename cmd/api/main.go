@@ -7,6 +7,7 @@ import (
 	"github.com/JaskiratAnand/go-social/internal/db"
 	"github.com/JaskiratAnand/go-social/internal/env"
 	"github.com/JaskiratAnand/go-social/internal/mailer"
+	"github.com/JaskiratAnand/go-social/internal/ratelimiter"
 	"github.com/JaskiratAnand/go-social/internal/store"
 	"github.com/JaskiratAnand/go-social/internal/store/cache"
 	"github.com/redis/go-redis/v9"
@@ -77,11 +78,18 @@ func main() {
 				iss:    "GoSocial",
 			},
 		},
+		ratelimiter: ratelimiter.Config{
+			RequestPerTimeFrame: env.GetInt("RATE_LIMITER_REQUESTS_COUNT", 20),
+			TimeFrame:           time.Second * 5,
+			Enabled:             env.GetBool("RATE_LIMITER_ENABLED", true),
+		},
 	}
 
+	// logger
 	logger := zap.Must(zap.NewProduction()).Sugar()
 	defer logger.Sync()
 
+	// database
 	db, err := db.New(
 		cfg.db.addr,
 		cfg.db.maxOpenConns,
@@ -95,18 +103,27 @@ func main() {
 
 	defer db.Close()
 
-	// Redis cache
+	// redis cache
 	var rdb *redis.Client
 	if cfg.redisCfg.enabled {
 		logger.Infow("redis cache connection established")
 		rdb = cache.NewRedisClient(cfg.redisCfg.addr, cfg.redisCfg.pw, cfg.redisCfg.db)
 	}
 
+	// rate limiter
+	ratelimiter := ratelimiter.NewFixedWindowLimiter(
+		cfg.ratelimiter.RequestPerTimeFrame,
+		cfg.ratelimiter.TimeFrame,
+	)
+
+	// stores
 	store := store.New(db)
 	cacheStorage := cache.NewRedisStorage(rdb)
 
+	// mailer
 	mailer := mailer.NewSendGrid(cfg.mail.sendGrid.apiKey, cfg.mail.emailAddr)
 
+	// auth
 	jwtAuthenticator := auth.NewJWTAuthenticator(
 		cfg.auth.token.secret,
 		cfg.auth.token.iss,
@@ -120,6 +137,7 @@ func main() {
 		logger:        logger,
 		mailer:        mailer,
 		authenticator: jwtAuthenticator,
+		rateLimiter:   ratelimiter,
 	}
 
 	mux := app.mount()
