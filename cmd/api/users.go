@@ -81,7 +81,7 @@ func (app *application) getUserByIdHandler(w http.ResponseWriter, r *http.Reques
 //	@Failure		404			{object}	error	"Record Not Found"
 //	@Failure		500			{object}	error	"Server encountered a problem"
 //	@Security		ApiKeyAuth
-//	// @Router			/users/{username} [get]
+//	// @Router			/users/username/{username} [get]
 func (app *application) getUserByUsernameHandler(w http.ResponseWriter, r *http.Request) {
 	username := chi.URLParam(r, "username")
 
