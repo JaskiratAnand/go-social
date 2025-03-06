@@ -1,6 +1,8 @@
 package main
 
 import (
+	"expvar"
+	"runtime"
 	"time"
 
 	"github.com/JaskiratAnand/go-social/internal/auth"
@@ -139,6 +141,14 @@ func main() {
 		authenticator: jwtAuthenticator,
 		rateLimiter:   ratelimiter,
 	}
+
+	expvar.NewString("version").Set(version)
+	expvar.Publish("database", expvar.Func(func() any {
+		return db.Stats()
+	}))
+	expvar.Publish("goroutines", expvar.Func(func() any {
+		return runtime.NumGoroutine()
+	}))
 
 	mux := app.mount()
 

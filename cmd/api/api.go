@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"expvar"
 	"fmt"
 	"net/http"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/JaskiratAnand/go-social/internal/auth"
+	"github.com/JaskiratAnand/go-social/internal/env"
 	"github.com/JaskiratAnand/go-social/internal/mailer"
 	"github.com/JaskiratAnand/go-social/internal/ratelimiter"
 	"github.com/JaskiratAnand/go-social/internal/store"
@@ -88,7 +90,7 @@ func (app *application) mount() http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"https://*", "http://*"},
+		AllowedOrigins:   []string{env.GetString("CORS_ALLOWED_ORIGIN", "http://localhost:5174")},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSFR-Token"},
 		ExposedHeaders:   []string{"Link"},
@@ -107,7 +109,9 @@ func (app *application) mount() http.Handler {
 	r.Use(app.ContextMiddlware())
 
 	r.Route("/v1", func(r chi.Router) {
-		r.Get("/health", app.healthCheckHandler)
+		r.With(app.BasicAuthMiddleware()).Get("/health", app.healthCheckHandler)
+
+		r.With(app.BasicAuthMiddleware()).Get("/debug/vars", expvar.Handler().ServeHTTP)
 
 		// swagger route
 		docsURL := fmt.Sprintf("%s/swagger/doc.json", app.config.addr)
