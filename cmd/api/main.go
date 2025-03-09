@@ -19,13 +19,6 @@ import (
 const version = "0.0.1"
 const QueryTimeoutDuration = time.Second * 5
 
-func If[T any](cond bool, vtrue, vfalse T) T {
-	if cond {
-		return vtrue
-	}
-	return vfalse
-}
-
 //	@title			GoSocial API
 //	@description	API for GoSocial, a social networking application.
 //	@termsOfService	http://swagger.io/terms/
@@ -153,4 +146,11 @@ func main() {
 	mux := app.mount()
 
 	logger.Fatal(app.run(mux))
+}
+
+func If[T any](cond bool, vtrue, vfalse T) T {
+	if cond {
+		return vtrue
+	}
+	return vfalse
 }
