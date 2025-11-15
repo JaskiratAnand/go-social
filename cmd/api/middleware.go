@@ -16,8 +16,10 @@ import (
 
 type contextKey string
 
-const userCtx contextKey = "user"
-const postCtx contextKey = "post"
+const (
+	userCtx contextKey = "user"
+	postCtx contextKey = "post"
+)
 
 func (app *application) GetUserFromCtx(r *http.Request) store.Users {
 	user := r.Context().Value(userCtx).(store.Users)

@@ -16,8 +16,10 @@ import (
 	"go.uber.org/zap"
 )
 
-const version = "0.0.1"
-const QueryTimeoutDuration = time.Second * 5
+const (
+	version              = "0.0.1"
+	QueryTimeoutDuration = time.Second * 5
+)
 
 //	@title			GoSocial API
 //	@description	API for GoSocial, a social networking application.

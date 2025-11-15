@@ -82,6 +82,15 @@ This project is a social networking site built using Golang.
     air
     ```
 
+10. Build
+    ```bash
+    # Windows
+    go build -o server .\cmd\api
+
+    # Linux 
+    go build -o api cmd/api/*.go
+    ```
+
 Access the application:
 The server will run at `http://localhost:8080` by default.
 

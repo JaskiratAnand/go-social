@@ -18,7 +18,6 @@ var (
 )
 
 func Seed(store *store.Queries) error {
-
 	ctx := context.Background()
 
 	log.Println("generating users...")
@@ -69,7 +68,6 @@ func Seed(store *store.Queries) error {
 }
 
 func generateUsers(num int) []*store.CreateUserParams {
-
 	names := []string{
 		"Aarav", "Emma", "Liam", "Sophia", "Noah", "Olivia", "Ethan", "Ava", "Mason", "Isabella",
 		"Lucas", "Mia", "Elijah", "Amelia", "Logan", "Harper", "James", "Charlotte", "Aiden", "Ella",
@@ -94,7 +92,6 @@ func generateUsers(num int) []*store.CreateUserParams {
 }
 
 func generatePosts(num int, userIDs []uuid.UUID) []*store.CreatePostParams {
-
 	titles := []string{
 		"The Power of Habit", "Embracing Minimalism", "Healthy Eating Tips",
 		"Travel on a Budget", "Mindfulness Meditation", "Boost Your Productivity",
@@ -146,7 +143,6 @@ func generatePosts(num int, userIDs []uuid.UUID) []*store.CreatePostParams {
 }
 
 func generateComments(num int, userIDs, postIDs []uuid.UUID) []*store.CreateCommentParams {
-
 	contents := []string{
 		"Great post! Thanks for sharing.",
 		"I completely agree with your thoughts.",

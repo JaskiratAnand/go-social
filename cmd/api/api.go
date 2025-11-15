@@ -159,7 +159,6 @@ func (app *application) mount() http.Handler {
 				r.Get("/feed", app.getUserFeedHandler)
 			})
 		})
-
 	})
 
 	return r

@@ -99,5 +99,4 @@ func TestGetUser(t *testing.T) {
 		mockCacheStore.AssertNotCalled(t, "Get")
 		mockCacheStore.Calls = nil
 	})
-
 }
