@@ -1,10 +1,10 @@
-FROM golang:1.23.4 AS builder
+FROM golang:1.25.4 AS builder
 WORKDIR /app
 COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o api cmd/api/*.go
 
-FROM scratch 
+FROM scratch
 WORKDIR /app
 
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
